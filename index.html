@@ -206,7 +206,7 @@
     </div>
   </div>
 
-  <!-- لاگ ان پاپ اپ ماڈل -->
+  <!-- لاگ ان پاپ اپ ماڈل (#admin کھولنے پر یہ کھلے گا) -->
   <div id="loginModal" class="modal-overlay" style="display: none;">
     <div class="modal-box">
       <h3 style="margin-top:0; color:#1c3829; text-align:center;">ایڈمن لاگ ان</h3>
@@ -302,7 +302,7 @@
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  // IndexedDB سیکنڈوں میں فائل اپلوڈنگ کے لیے
+  // IndexedDB ڈیٹا بیس
   let db;
   const request = indexedDB.open("FastLibraryDB", 2);
   request.onupgradeneeded = function(e) {
@@ -327,8 +327,10 @@
   let currentPageIndex = 1;
   let pdfDoc = null;
 
+  // #admin چیک کرنے کی اہم لاجک
   function checkHashAndAuth() {
-    const isHashAdmin = window.location.hash === '#admin';
+    const currentHash = window.location.hash.toLowerCase();
+    const isHashAdmin = (currentHash === '#admin');
     const isLoggedInSession = sessionStorage.getItem('isAdminLoggedIn') === 'true';
 
     if (isHashAdmin) {
@@ -349,7 +351,10 @@
     renderLibrary();
   }
 
+  // ہیش تبدیل ہونے پر اور پیج لوڈ ہونے پر فوری چیک کریں
   window.addEventListener('hashchange', checkHashAndAuth);
+  window.addEventListener('load', checkHashAndAuth);
+  setInterval(checkHashAndAuth, 500); // 0.5 سیکنڈ میں خودکار ہیش کی تفتش
 
   function processLogin() {
     const u = document.getElementById('loginUser').value;
@@ -365,13 +370,13 @@
   }
 
   function cancelLogin() {
-    history.pushState("", document.title, window.location.pathname + window.location.search);
+    window.location.hash = '';
     checkHashAndAuth();
   }
 
   function adminLogout() {
     sessionStorage.removeItem('isAdminLoggedIn');
-    history.pushState("", document.title, window.location.pathname + window.location.search);
+    window.location.hash = '';
     alert('آپ لاگ آؤٹ ہو چکے ہیں!');
     checkHashAndAuth();
   }
@@ -410,7 +415,6 @@
     toggleSettingsPanel();
   }
 
-  // فوری زیرو ڈیلے اپلوڈ فنکشن (Blob / Raw File Storage)
   async function saveNewBookFast() {
     const titleUr = document.getElementById('bookTitleUr').value;
     const titleEn = document.getElementById('bookTitleEn').value;
@@ -432,7 +436,7 @@
 
     let pdfBlob = null;
     if (pdfFile) {
-      pdfBlob = pdfFile; // ڈائریکٹ موبائل فائل کو بنا پروسیس کیے IndexedDB میں محفوظ کریں
+      pdfBlob = pdfFile;
     } else if (pdfUrl) {
       pdfBlob = pdfUrl;
     } else { 
@@ -454,7 +458,7 @@
     store.add(bookData);
 
     transaction.oncomplete = function() {
-      alert('کتاب فوراً اور فاسٹ اپلوڈ ہو گئی!');
+      alert('کتاب کامیابی سے اپلوڈ ہو گئی!');
       saveBtn.innerText = 'محفوظ کریں';
       saveBtn.disabled = false;
       document.getElementById('bookTitleUr').value = '';
@@ -487,6 +491,7 @@
     getAll.onsuccess = function() {
       activeBookList = getAll.result;
       const isAdminLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+      const isHashAdmin = window.location.hash.toLowerCase() === '#admin';
 
       if(activeBookList.length === 0) {
         grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">کوئی کتاب موجود نہیں ہے۔</p>`;
@@ -498,7 +503,7 @@
         card.className = 'book-card-item';
         
         let deleteBtnHTML = '';
-        if (isAdminLoggedIn && window.location.hash === '#admin') {
+        if (isAdminLoggedIn && isHashAdmin) {
           deleteBtnHTML = `<button class="nav-btn btn-danger delete-btn" onclick="deleteBook(${book.id})">🗑 ڈیلیٹ کریں</button>`;
         }
 
