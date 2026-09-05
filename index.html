@@ -246,7 +246,7 @@
       <input type="file" id="pdfFileInput" accept="application/pdf">
       <input type="text" id="pdfUrlInput" placeholder="یا پی ڈی ایف فائل کا لنک (URL) درج کریں" style="margin-top: 5px;">
     </div>
-    <button class="nav-btn" id="saveBookBtn" onclick="saveNewBook()">محفوظ کریں</button>
+    <button class="nav-btn" id="saveBookBtn" onclick="saveNewBookFast()">محفوظ کریں</button>
     <button class="nav-btn btn-danger" onclick="toggleUploadPanel()">بند کریں</button>
   </div>
 
@@ -304,7 +304,7 @@
 
   // IndexedDB سیکنڈوں میں فائل اپلوڈنگ کے لیے
   let db;
-  const request = indexedDB.open("LibraryDB", 1);
+  const request = indexedDB.open("FastLibraryDB", 2);
   request.onupgradeneeded = function(e) {
     db = e.target.result;
     if (!db.objectStoreNames.contains("books")) {
@@ -410,8 +410,8 @@
     toggleSettingsPanel();
   }
 
-  // سپر فاسٹ سیونگ (ArrayBuffer کے ساتھ)
-  async function saveNewBook() {
+  // فوری زیرو ڈیلے اپلوڈ فنکشن (Blob / Raw File Storage)
+  async function saveNewBookFast() {
     const titleUr = document.getElementById('bookTitleUr').value;
     const titleEn = document.getElementById('bookTitleEn').value;
     const coverFile = document.getElementById('coverFileInput').files[0];
@@ -426,12 +426,16 @@
     saveBtn.disabled = true;
 
     let finalCover = coverUrl;
-    if (coverFile) finalCover = await readFileAsDataURL(coverFile);
+    if (coverFile) {
+      finalCover = await readFileAsDataURL(coverFile);
+    }
 
-    let pdfData = null;
-    if (pdfFile) pdfData = await readFileAsArrayBuffer(pdfFile);
-    else if (pdfUrl) pdfData = pdfUrl;
-    else { 
+    let pdfBlob = null;
+    if (pdfFile) {
+      pdfBlob = pdfFile; // ڈائریکٹ موبائل فائل کو بنا پروسیس کیے IndexedDB میں محفوظ کریں
+    } else if (pdfUrl) {
+      pdfBlob = pdfUrl;
+    } else { 
       alert('پی ڈی ایف فائل یا لنک شامل کریں');
       saveBtn.innerText = 'محفوظ کریں';
       saveBtn.disabled = false;
@@ -442,7 +446,7 @@
       titleUr: titleUr,
       titleEn: titleEn || titleUr,
       cover: finalCover || 'https://via.placeholder.com/300x400?text=No+Cover',
-      pdfData: pdfData
+      pdfBlob: pdfBlob
     };
 
     const transaction = db.transaction(["books"], "readwrite");
@@ -450,9 +454,13 @@
     store.add(bookData);
 
     transaction.oncomplete = function() {
-      alert('کتاب سیکنڈوں میں کامیابی سے اپلوڈ ہو گئی!');
+      alert('کتاب فوراً اور فاسٹ اپلوڈ ہو گئی!');
       saveBtn.innerText = 'محفوظ کریں';
       saveBtn.disabled = false;
+      document.getElementById('bookTitleUr').value = '';
+      document.getElementById('bookTitleEn').value = '';
+      document.getElementById('pdfFileInput').value = '';
+      document.getElementById('coverFileInput').value = '';
       toggleUploadPanel();
       renderLibrary();
     };
@@ -464,15 +472,6 @@
       reader.onload = () => resolve(reader.result);
       reader.onerror = reject;
       reader.readAsDataURL(file);
-    });
-  }
-
-  function readFileAsArrayBuffer(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
     });
   }
 
@@ -488,6 +487,11 @@
     getAll.onsuccess = function() {
       activeBookList = getAll.result;
       const isAdminLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+
+      if(activeBookList.length === 0) {
+        grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">کوئی کتاب موجود نہیں ہے۔</p>`;
+        return;
+      }
 
       activeBookList.forEach((book, index) => {
         const card = document.createElement('div');
@@ -532,7 +536,15 @@
     document.getElementById('backToLibBtn').style.display = 'inline-flex';
     document.getElementById('activeBookTitle').innerText = currentLang === 'ur' ? book.titleUr : book.titleEn;
 
-    const loadingTask = pdfjsLib.getDocument({ data: book.pdfData });
+    let pdfData;
+    if (typeof book.pdfBlob === 'string') {
+      pdfData = book.pdfBlob;
+    } else {
+      const arrayBuffer = await book.pdfBlob.arrayBuffer();
+      pdfData = new Uint8Array(arrayBuffer);
+    }
+
+    const loadingTask = pdfjsLib.getDocument({ data: pdfData });
     pdfDoc = await loadingTask.promise;
     document.getElementById('totalPages').innerText = pdfDoc.numPages;
     renderPdfPage(currentPageIndex);
