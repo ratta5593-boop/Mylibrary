@@ -5,24 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="docTitle">آن لائن کتب خانہ - عطاء الرحمٰن عطاء</title>
   <style>
-    /* پرنٹنگ اور اسکرین شاٹ کی روک تھام کے لیے */
+    /* پرنٹنگ اور اسکرین شاٹ پروٹیکشن */
     @media print {
       body { display: none !important; }
     }
 
-    /* سیکیورٹی کے لیے بلر کیپچر */
     .blur-protected {
       filter: blur(15px) !important;
       user-select: none !important;
     }
 
+    /* تصویر والے تھیم کے عین مطابق رنگ */
     body {
-      background-color: #fcfbfa;
+      background-color: #f4f0eb; /* کریمی بیک گراؤنڈ */
       margin: 0;
       padding: 0;
       font-family: 'Noto Nastaliq Urdu', Arial, sans-serif;
       direction: rtl;
       text-align: right;
+      color: #1c3829;
       -webkit-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
@@ -35,7 +36,6 @@
       padding: 0 20px;
     }
 
-    /* ایک ہی لائن میں نیویگیشن اور ایکشن بٹنز */
     .books-nav-bar {
       display: flex;
       justify-content: space-between;
@@ -45,10 +45,10 @@
     }
 
     .nav-btn {
-      background: #1c3829;
-      color: #fff;
-      padding: 8px 16px;
-      border-radius: 4px;
+      background: #1c3829; /* ڈارک گرین بٹن */
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 6px;
       text-decoration: none;
       border: none;
       cursor: pointer;
@@ -56,21 +56,22 @@
       font-weight: bold;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       transition: background 0.2s;
     }
 
     .nav-btn:hover {
-      background: #b38b4d;
+      background: #b89762; /* گولڈ ہوور */
     }
 
     .books-header-title {
       text-align: center;
       margin-bottom: 30px;
       background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #e0dbd1;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #e2dad0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
 
     .books-header-title h1 {
@@ -81,7 +82,7 @@
 
     .books-header-title p {
       font-size: 13px;
-      color: #666;
+      color: #756a5d;
     }
 
     .books-grid-container {
@@ -91,27 +92,27 @@
     }
 
     .book-card-item {
-      background: #fff;
-      border: 1px solid #e0dbd1;
-      border-radius: 8px;
-      padding: 15px;
+      background: #ffffff;
+      border: 1px solid #e2dad0;
+      border-radius: 12px;
+      padding: 16px;
       text-align: center;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
     }
 
     .book-card-item:hover {
       transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-      border-color: #b38b4d;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      border-color: #b89762;
     }
 
     .book-cover-box img {
       width: 100%;
       height: 280px;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 6px;
       margin-bottom: 12px;
       pointer-events: none;
     }
@@ -119,32 +120,33 @@
     .book-card-item h3 {
       font-size: 18px;
       color: #1c3829;
-      margin: 0 0 5px 0;
+      margin: 0 0 6px 0;
     }
 
     .book-card-item p {
-      font-size: 12px;
-      color: #b38b4d;
+      font-size: 13px;
+      color: #b89762; /* گولڈن پبلشر/مصنف کا نام */
       margin: 0;
       font-weight: 600;
     }
 
     .secure-book-container {
-      background: #fff;
-      border: 1px solid #dcd6cd;
-      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #e2dad0;
+      border-radius: 12px;
       padding: 20px;
       text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
       touch-action: pan-y;
       overflow: hidden;
     }
 
     .book-page-view img {
       max-width: 100%;
-      height: 450px;
+      height: 480px;
       object-fit: contain;
       border: 1px solid #eee;
+      border-radius: 4px;
       pointer-events: none;
       transition: filter 0.2s;
     }
@@ -160,10 +162,10 @@
     #pageIndicator {
       font-size: 14px;
       font-weight: bold;
-      color: #333;
+      color: #1c3829;
     }
 
-    /* LTR لے آؤٹ کے لیے مخصوص سیٹنگز */
+    /* انگلش / LTR لے آؤٹ ایڈجسٹمنٹ */
     [dir="ltr"] body {
       text-align: left;
       font-family: Arial, sans-serif;
@@ -179,13 +181,13 @@
 
 <div class="books-page-wrapper" id="contentWrapper">
   
-  <!-- ٹاپ نیویگیشن بار (ایک ہی لائن میں) -->
+  <!-- نیویگیشن بار -->
   <div class="books-nav-bar">
     <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
     <button class="nav-btn" id="backToLibBtn" onclick="closeBook()" style="display: none;">← تمام کتب کی طرف واپس</button>
   </div>
 
-  <!-- ویو 1: لائبریری لسٹ -->
+  <!-- لائبریری گرڈ -->
   <div id="libraryView" class="library-view-section">
     <div class="books-header-title">
       <h1 id="libTitle">آن لائن کتب خانہ</h1>
@@ -193,11 +195,11 @@
     </div>
 
     <div class="books-grid-container" id="booksGrid">
-      <!-- کتب کی لسٹ -->
+      <!-- جاوا اسکرپٹ سے کتب آئیں گی -->
     </div>
   </div>
 
-  <!-- ویو 2: کتاب کا ریڈر -->
+  <!-- بک ریڈر -->
   <div id="readerView" class="reader-view-section" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 id="activeBookTitle" style="font-size: 20px; color: #1c3829; margin: 0;">کتاب کا نام</h2>
@@ -272,21 +274,24 @@
   let currentBookIndex = 0;
   let currentPageIndex = 0;
 
-  // تمام تکنیکوں کے ذریعے بلاگ کی زبان کا پتہ لگانا
+  // بلاگ کی زبان جانچنا (بٹنز اور ہوم پیج ٹوگل کے مطابق)
   function detectBlogLanguage() {
     let detectedLang = 'ur';
 
-    // 1. HTML attributes چیک کریں
     const htmlElem = document.documentElement;
     const langAttr = (htmlElem.getAttribute('lang') || '').toLowerCase();
     const dirAttr = (htmlElem.getAttribute('dir') || '').toLowerCase();
-
-    // 2. Google Translate کی کوکیز یا کلاسز چیک کریں
-    const cookies = document.cookie;
-    const isGoogleEng = cookies.includes('googtrans=/ur/en') || cookies.includes('googtrans=/auto/en');
     const bodyClass = document.body.className;
+    const cookies = document.cookie;
 
-    if (langAttr.startsWith('en') || dirAttr === 'ltr' || isGoogleEng || bodyClass.includes('translated-ltr')) {
+    // اگر بلاگ کی زبان انگریزی پر سیٹ ہو
+    if (
+      langAttr.startsWith('en') || 
+      dirAttr === 'ltr' || 
+      cookies.includes('googtrans=/ur/en') || 
+      cookies.includes('googtrans=/auto/en') ||
+      bodyClass.includes('translated-ltr')
+    ) {
       detectedLang = 'en';
     } else {
       detectedLang = 'ur';
@@ -319,7 +324,6 @@
     }
   }
 
-  // لائبریری رینڈر کرنا
   function renderLibrary() {
     const grid = document.getElementById('booksGrid');
     grid.innerHTML = '';
@@ -412,7 +416,7 @@
     }
   }
 
-  // --- اسکرین شاٹ پروٹیکشن ---
+  // --- اسکرین شاٹ اور کاپی پروٹیکشن ---
   document.addEventListener('contextmenu', e => e.preventDefault());
 
   document.addEventListener('keydown', e => {
@@ -435,10 +439,9 @@
     document.body.classList.remove('blur-protected');
   });
 
-  // 1. ابتدائی چیک
+  // خودکار زبان کی مانیٹرنگ
   detectBlogLanguage();
 
-  // 2. اگر بلاگ میں زبان تبدیل کرنے کے لیے سوئچر پر کلک کیا جائے تو فوراً زبان اپ ڈیٹ ہوگی
   const observer = new MutationObserver(() => {
     detectBlogLanguage();
   });
@@ -446,8 +449,7 @@
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang', 'dir', 'class'] });
   observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-  // 3. مسلسل چیک (ہر 1 سیکنڈ بعد تاکہ گوگل ٹرانسلیٹ کی تبدیلی فوراً مل جائے)
-  setInterval(detectBlogLanguage, 1000);
+  setInterval(detectBlogLanguage, 800);
 </script>
 
 </body>
