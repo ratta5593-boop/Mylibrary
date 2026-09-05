@@ -4,28 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="docTitle">آن لائن کتب خانہ - عطاء الرحمٰن عطاء</title>
-  <style>
-    /* پرنٹنگ اور اسکرین شاٹ کی روک تھام کے لیے */
-    @media print {
-      body { display: none !important; }
-    }
 
-    /* سیکیورٹی کے لیے بلر کیپچر */
-    .blur-protected {
-      filter: blur(15px) !important;
-      user-select: none !important;
-    }
+  <!-- PDF.js لائبریری -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <style>
+    @media print { body { display: none !important; } }
+    .blur-protected { filter: blur(15px) !important; user-select: none !important; }
 
     body {
-      background-color: #fcfbfa;
+      background-color: #f4f0eb;
       margin: 0;
       padding: 0;
       font-family: 'Noto Nastaliq Urdu', Arial, sans-serif;
       direction: rtl;
       text-align: right;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
+      color: #1c3829;
       user-select: none;
     }
 
@@ -35,7 +29,6 @@
       padding: 0 20px;
     }
 
-    /* ایک ہی لائن میں نیویگیشن اور ایکشن بٹنز */
     .books-nav-bar {
       display: flex;
       justify-content: space-between;
@@ -46,9 +39,9 @@
 
     .nav-btn {
       background: #1c3829;
-      color: #fff;
+      color: #ffffff;
       padding: 8px 16px;
-      border-radius: 4px;
+      border-radius: 6px;
       text-decoration: none;
       border: none;
       cursor: pointer;
@@ -56,32 +49,40 @@
       font-weight: bold;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      transition: background 0.2s;
+      gap: 6px;
     }
 
-    .nav-btn:hover {
-      background: #b38b4d;
+    .nav-btn:hover { background: #b89762; }
+    .admin-btn { background: #b89762; }
+
+    /* ایڈمن فارم */
+    .admin-panel {
+      background: #ffffff;
+      border: 1px solid #e2dad0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+    .form-group input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
     }
 
     .books-header-title {
       text-align: center;
       margin-bottom: 30px;
       background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #e0dbd1;
-    }
-
-    .books-header-title h1 {
-      font-size: 26px;
-      color: #1c3829;
-      margin-bottom: 8px;
-    }
-
-    .books-header-title p {
-      font-size: 13px;
-      color: #666;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #e2dad0;
     }
 
     .books-grid-container {
@@ -91,62 +92,55 @@
     }
 
     .book-card-item {
-      background: #fff;
-      border: 1px solid #e0dbd1;
-      border-radius: 8px;
-      padding: 15px;
+      background: #ffffff;
+      border: 1px solid #e2dad0;
+      border-radius: 12px;
+      padding: 16px;
       text-align: center;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
     }
 
-    .book-card-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-      border-color: #b38b4d;
-    }
-
+    .book-card-item:hover { border-color: #b89762; }
     .book-cover-box img {
       width: 100%;
       height: 280px;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 6px;
       margin-bottom: 12px;
       pointer-events: none;
     }
 
-    .book-card-item h3 {
-      font-size: 18px;
-      color: #1c3829;
-      margin: 0 0 5px 0;
-    }
-
-    .book-card-item p {
-      font-size: 12px;
-      color: #b38b4d;
-      margin: 0;
-      font-weight: 600;
-    }
-
     .secure-book-container {
-      background: #fff;
-      border: 1px solid #dcd6cd;
-      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #e2dad0;
+      border-radius: 12px;
       padding: 20px;
       text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       touch-action: pan-y;
-      overflow: hidden;
+      position: relative;
     }
 
-    .book-page-view img {
+    /* فل سکرین ریڈنگ اسٹائل */
+    .secure-book-container:fullscreen {
+      background: #f4f0eb;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .book-page-view canvas, .book-page-view img {
       max-width: 100%;
-      height: 450px;
-      object-fit: contain;
+      height: auto;
+      max-height: 500px;
       border: 1px solid #eee;
       pointer-events: none;
-      transition: filter 0.2s;
+    }
+
+    .secure-book-container:fullscreen .book-page-view canvas {
+      max-height: 80vh;
     }
 
     .book-controls-bar {
@@ -154,64 +148,91 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 10px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    #pageIndicator {
-      font-size: 14px;
-      font-weight: bold;
-      color: #333;
-    }
-
-    /* LTR لے آؤٹ کے لیے مخصوص سیٹنگز */
-    [dir="ltr"] body {
-      text-align: left;
-      font-family: Arial, sans-serif;
-    }
-    [dir="ltr"] .books-header-title,
-    [dir="ltr"] .book-card-item,
-    [dir="ltr"] .secure-book-container {
+    .page-input-box {
+      width: 50px;
       text-align: center;
+      padding: 4px;
+      border: 1px solid #b89762;
+      border-radius: 4px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-<div class="books-page-wrapper" id="contentWrapper">
+<div class="books-page-wrapper">
   
-  <!-- ٹاپ نیویگیشن بار (ایک ہی لائن میں) -->
   <div class="books-nav-bar">
     <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
-    <button class="nav-btn" id="backToLibBtn" onclick="closeBook()" style="display: none;">← تمام کتب کی طرف واپس</button>
+    <div>
+      <button class="nav-btn admin-btn" onclick="openAdminWithPassword()">⚙ ایڈمن پینل</button>
+      <button class="nav-btn" id="backToLibBtn" onclick="closeBook()" style="display: none;">← تمام کتب</button>
+    </div>
   </div>
 
-  <!-- ویو 1: لائبریری لسٹ -->
-  <div id="libraryView" class="library-view-section">
+  <!-- ایڈمن فارم (پاسورڈ کے بغیر ظاہر نہیں ہوگا) -->
+  <div id="adminPanel" class="admin-panel" style="display: none;">
+    <h3>کتاب اپلوڈ کریں (ایڈمن)</h3>
+    
+    <div class="form-group">
+      <label>کتاب کا نام (اردو):</label>
+      <input type="text" id="bookTitleUr" placeholder="مثال: تحقیقی مقالات">
+    </div>
+
+    <div class="form-group">
+      <label>کتاب کا نام (English):</label>
+      <input type="text" id="bookTitleEn" placeholder="Example: Research Papers">
+    </div>
+
+    <div class="form-group">
+      <label>کتاب کا کور (Cover Image):</label>
+      <input type="file" id="coverFileInput" accept="image/*">
+      <input type="text" id="coverUrlInput" placeholder="یا امیج کا لنک (URL) درج کریں" style="margin-top: 5px;">
+    </div>
+
+    <div class="form-group">
+      <label>کتاب کی پی ڈی ایف (PDF File):</label>
+      <input type="file" id="pdfFileInput" accept="application/pdf">
+      <input type="text" id="pdfUrlInput" placeholder="یا پی ڈی ایف فائل کا لنک (URL) درج کریں" style="margin-top: 5px;">
+    </div>
+
+    <button class="nav-btn" onclick="saveNewBook()">محفوظ کریں</button>
+    <button class="nav-btn" style="background: #a33;" onclick="toggleAdminPanel()">بند کریں</button>
+  </div>
+
+  <!-- لائبریری ویو -->
+  <div id="libraryView">
     <div class="books-header-title">
       <h1 id="libTitle">آن لائن کتب خانہ</h1>
       <p id="libSubtitle">مطالعہ کے لیے نیچے دی گئی کتب میں سے کسی کتاب پر کلک کریں</p>
     </div>
-
-    <div class="books-grid-container" id="booksGrid">
-      <!-- کتب کی لسٹ -->
-    </div>
+    <div class="books-grid-container" id="booksGrid"></div>
   </div>
 
-  <!-- ویو 2: کتاب کا ریڈر -->
-  <div id="readerView" class="reader-view-section" style="display: none;">
+  <!-- بک ریڈر -->
+  <div id="readerView" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 id="activeBookTitle" style="font-size: 20px; color: #1c3829; margin: 0;">کتاب کا نام</h2>
+      <button class="nav-btn" onclick="toggleFullScreen()">⤢ فل سکرین</button>
     </div>
 
     <div class="secure-book-container" id="swipeArea">
-      <div class="book-page-view">
-        <img id="bookPageImg" src="" alt="Book Page" draggable="false">
-      </div>
+      <div class="book-page-view" id="pageViewer"></div>
       
       <div class="book-controls-bar">
-        <button class="nav-btn" id="prevBtn" onclick="prevPage()">← پچھلا صفحہ</button>
-        <span id="pageIndicator">صفحہ 1 / 2</span>
-        <button class="nav-btn" id="nextBtn" onclick="nextPage()">اگلا صفحہ →</button>
+        <button class="nav-btn" id="prevBtn" onclick="prevPage()">← پچھلا</button>
+        
+        <!-- پیج نمبر شو اور جمپ کرنے کا سسٹم -->
+        <div style="font-size: 14px; font-weight: bold;">
+          صفحہ <input type="number" id="pageInput" class="page-input-box" min="1" onchange="jumpToPage(this.value)"> 
+          / <span id="totalPages">1</span>
+        </div>
+
+        <button class="nav-btn" id="nextBtn" onclick="nextPage()">اگلا →</button>
       </div>
     </div>
   </div>
@@ -219,138 +240,178 @@
 </div>
 
 <script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  const ADMIN_PASSWORD = "1234"; // اپنا پاسورڈ یہاں تبدیل کریں
   let currentLang = 'ur';
-
-  const translations = {
-    ur: {
-      docTitle: "آن لائن کتب خانہ - عطاء الرحمٰن عطاء",
-      homeBtn: "صفحہ اول (Home)",
-      backBtn: "← تمام کتب کی طرف واپس",
-      libTitle: "آن لائن کتب خانہ",
-      libSubtitle: "مطالعہ کے لیے نیچے دی گئی کتب میں سے کسی کتاب پر کلک کریں",
-      authorPrefix: "مصنف: ",
-      prevBtn: "← پچھلا صفحہ",
-      nextBtn: "اگلا صفحہ →",
-      pageWord: "صفحہ"
-    },
-    en: {
-      docTitle: "Online Library - Atta ur Rehman Atta",
-      homeBtn: "Home",
-      backBtn: "← Back to All Books",
-      libTitle: "Online Library",
-      libSubtitle: "Click on any book below to read",
-      authorPrefix: "Author: ",
-      prevBtn: "← Previous Page",
-      nextBtn: "Next Page →",
-      pageWord: "Page"
-    }
-  };
-
-  const libraryBooks = [
+  let libraryBooks = JSON.parse(localStorage.getItem('myLibraryBooks')) || [
     {
       titleUr: "تحقیقی مقالات",
       titleEn: "Research Papers",
-      authorUr: "عطاء الرحمٰن عطاء",
-      authorEn: "Atta ur Rehman Atta",
-      pages: [
-        "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800&q=80"
-      ]
-    },
-    {
-      titleUr: "تنقیدی زاویے",
-      titleEn: "Critical Perspectives",
-      authorUr: "عطاء الرحمٰن عطاء",
-      authorEn: "Atta ur Rehman Atta",
-      pages: [
-        "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80"
-      ]
+      cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
+      type: "images",
+      pages: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"]
     }
   ];
 
   let currentBookIndex = 0;
-  let currentPageIndex = 0;
+  let currentPageIndex = 1;
+  let pdfDoc = null;
 
-  // تمام تکنیکوں کے ذریعے بلاگ کی زبان کا پتہ لگانا
-  function detectBlogLanguage() {
-    let detectedLang = 'ur';
-
-    // 1. HTML attributes چیک کریں
-    const htmlElem = document.documentElement;
-    const langAttr = (htmlElem.getAttribute('lang') || '').toLowerCase();
-    const dirAttr = (htmlElem.getAttribute('dir') || '').toLowerCase();
-
-    // 2. Google Translate کی کوکیز یا کلاسز چیک کریں
-    const cookies = document.cookie;
-    const isGoogleEng = cookies.includes('googtrans=/ur/en') || cookies.includes('googtrans=/auto/en');
-    const bodyClass = document.body.className;
-
-    if (langAttr.startsWith('en') || dirAttr === 'ltr' || isGoogleEng || bodyClass.includes('translated-ltr')) {
-      detectedLang = 'en';
-    } else {
-      detectedLang = 'ur';
-    }
-
-    if (currentLang !== detectedLang) {
-      currentLang = detectedLang;
-      applyLanguageSettings();
+  // پاسورڈ سے ایڈمن پینل کھولنا
+  function openAdminWithPassword() {
+    const pass = prompt("ایڈمن پاسورڈ درج کریں:");
+    if (pass === ADMIN_PASSWORD) {
+      toggleAdminPanel();
+    } else if (pass !== null) {
+      alert("غلط پاسورڈ!");
     }
   }
 
-  function applyLanguageSettings() {
-    const htmlTag = document.documentElement;
-    htmlTag.setAttribute('lang', currentLang);
-    htmlTag.setAttribute('dir', currentLang === 'ur' ? 'rtl' : 'ltr');
+  function toggleAdminPanel() {
+    const panel = document.getElementById('adminPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
 
-    const t = translations[currentLang];
-    document.getElementById('docTitle').innerText = t.docTitle;
-    document.getElementById('homeBtn').innerText = t.homeBtn;
-    document.getElementById('backToLibBtn').innerText = t.backBtn;
-    document.getElementById('libTitle').innerText = t.libTitle;
-    document.getElementById('libSubtitle').innerText = t.libSubtitle;
-    document.getElementById('prevBtn').innerText = t.prevBtn;
-    document.getElementById('nextBtn').innerText = t.nextBtn;
+  async function saveNewBook() {
+    const titleUr = document.getElementById('bookTitleUr').value;
+    const titleEn = document.getElementById('bookTitleEn').value;
+    const coverFile = document.getElementById('coverFileInput').files[0];
+    const coverUrl = document.getElementById('coverUrlInput').value;
+    const pdfFile = document.getElementById('pdfFileInput').files[0];
+    const pdfUrl = document.getElementById('pdfUrlInput').value;
 
+    if (!titleUr) { alert('کتاب کا نام لکھنا ضروری ہے'); return; }
+
+    let finalCover = coverUrl;
+    if (coverFile) finalCover = await readFileAsDataURL(coverFile);
+
+    let bookData = {
+      titleUr: titleUr,
+      titleEn: titleEn || titleUr,
+      cover: finalCover || 'https://via.placeholder.com/300x400?text=No+Cover',
+      type: 'pdf',
+      pdfData: null
+    };
+
+    if (pdfFile) bookData.pdfData = await readFileAsDataURL(pdfFile);
+    else if (pdfUrl) bookData.pdfData = pdfUrl;
+    else { alert('پی ڈی ایف فائل یا لنک شامل کریں'); return; }
+
+    libraryBooks.push(bookData);
+    localStorage.setItem('myLibraryBooks', JSON.stringify(libraryBooks));
+    alert('کتاب کامیابی سے اپلوڈ ہو گئی!');
+    toggleAdminPanel();
     renderLibrary();
-    if (document.getElementById('readerView').style.display === 'block') {
-      updateBookTitle();
-      updatePage();
-    }
   }
 
-  // لائبریری رینڈر کرنا
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   function renderLibrary() {
     const grid = document.getElementById('booksGrid');
     grid.innerHTML = '';
     
     libraryBooks.forEach((book, index) => {
-      const title = currentLang === 'ur' ? book.titleUr : book.titleEn;
-      const author = currentLang === 'ur' ? book.authorUr : book.authorEn;
-      
       const card = document.createElement('div');
       card.className = 'book-card-item';
       card.onclick = () => openBook(index);
       card.innerHTML = `
-        <div class="book-cover-box">
-          <img src="${book.pages[0]}" alt="Book Cover">
-        </div>
-        <h3>${title}</h3>
-        <p>${translations[currentLang].authorPrefix}${author}</p>
+        <div class="book-cover-box"><img src="${book.cover}" alt="Book Cover"></div>
+        <h3>${currentLang === 'ur' ? book.titleUr : book.titleEn}</h3>
       `;
       grid.appendChild(card);
     });
   }
 
-  function openBook(bookIndex) {
-    currentBookIndex = bookIndex;
-    currentPageIndex = 0;
+  async function openBook(index) {
+    currentBookIndex = index;
+    currentPageIndex = 1;
+    const book = libraryBooks[index];
+
     document.getElementById('libraryView').style.display = 'none';
     document.getElementById('readerView').style.display = 'block';
     document.getElementById('backToLibBtn').style.display = 'inline-flex';
+    document.getElementById('activeBookTitle').innerText = currentLang === 'ur' ? book.titleUr : book.titleEn;
+
+    if (book.type === 'pdf' || book.pdfData) {
+      const loadingTask = pdfjsLib.getDocument(book.pdfData);
+      pdfDoc = await loadingTask.promise;
+      document.getElementById('totalPages').innerText = pdfDoc.numPages;
+      renderPdfPage(currentPageIndex);
+    } else {
+      pdfDoc = null;
+      document.getElementById('totalPages').innerText = book.pages.length;
+      renderImagePage();
+    }
+  }
+
+  async function renderPdfPage(num) {
+    const page = await pdfDoc.getPage(num);
+    const viewport = page.getViewport({ scale: 1.5 });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const viewer = document.getElementById('pageViewer');
+    viewer.innerHTML = '';
+    viewer.appendChild(canvas);
+
+    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    document.getElementById('pageInput').value = num;
+  }
+
+  function renderImagePage() {
+    const book = libraryBooks[currentBookIndex];
+    const viewer = document.getElementById('pageViewer');
+    viewer.innerHTML = `<img src="${book.pages[currentPageIndex - 1]}" alt="Page">`;
+    document.getElementById('pageInput').value = currentPageIndex;
+  }
+
+  function jumpToPage(val) {
+    let pageNum = parseInt(val);
+    let max = pdfDoc ? pdfDoc.numPages : libraryBooks[currentBookIndex].pages.length;
     
-    updateBookTitle();
-    updatePage();
+    if (pageNum >= 1 && pageNum <= max) {
+      currentPageIndex = pageNum;
+      if (pdfDoc) renderPdfPage(currentPageIndex);
+      else renderImagePage();
+    }
+  }
+
+  function nextPage() {
+    let max = pdfDoc ? pdfDoc.numPages : libraryBooks[currentBookIndex].pages.length;
+    if (currentPageIndex < max) {
+      currentPageIndex++;
+      if (pdfDoc) renderPdfPage(currentPageIndex);
+      else renderImagePage();
+    }
+  }
+
+  function prevPage() {
+    if (currentPageIndex > 1) {
+      currentPageIndex--;
+      if (pdfDoc) renderPdfPage(currentPageIndex);
+      else renderImagePage();
+    }
+  }
+
+  // فل سکرین فنکشن
+  function toggleFullScreen() {
+    const container = document.getElementById('swipeArea');
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().catch(err => alert("فل سکرین فعال نہیں ہو سکی"));
+    } else {
+      document.exitFullscreen();
+    }
   }
 
   function closeBook() {
@@ -359,95 +420,12 @@
     document.getElementById('backToLibBtn').style.display = 'none';
   }
 
-  function updateBookTitle() {
-    const book = libraryBooks[currentBookIndex];
-    document.getElementById('activeBookTitle').innerText = currentLang === 'ur' ? book.titleUr : book.titleEn;
-  }
-
-  function updatePage() {
-    const book = libraryBooks[currentBookIndex];
-    document.getElementById('bookPageImg').src = book.pages[currentPageIndex];
-    
-    const pageText = translations[currentLang].pageWord;
-    document.getElementById('pageIndicator').innerText = `${pageText} ${currentPageIndex + 1} / ${book.pages.length}`;
-  }
-
-  function nextPage() {
-    const book = libraryBooks[currentBookIndex];
-    if (currentPageIndex < book.pages.length - 1) {
-      currentPageIndex++;
-      updatePage();
-    }
-  }
-
-  function prevPage() {
-    if (currentPageIndex > 0) {
-      currentPageIndex--;
-      updatePage();
-    }
-  }
-
-  // --- ٹچ اور انگلی سے سوائپ (Touch Swipe) ---
-  const swipeContainer = document.getElementById('swipeArea');
-  let startX = 0;
-  let endX = 0;
-
-  swipeContainer.addEventListener('touchstart', e => {
-    startX = e.changedTouches[0].screenX;
-  }, {passive: true});
-
-  swipeContainer.addEventListener('touchend', e => {
-    endX = e.changedTouches[0].screenX;
-    handleSwipe();
-  }, {passive: true});
-
-  function handleSwipe() {
-    const threshold = 40;
-    const isRtl = currentLang === 'ur';
-
-    if (startX - endX > threshold) {
-      isRtl ? nextPage() : prevPage();
-    } else if (endX - startX > threshold) {
-      isRtl ? prevPage() : nextPage();
-    }
-  }
-
-  // --- اسکرین شاٹ پروٹیکشن ---
+  // سیکیورٹی
   document.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('blur', () => document.body.classList.add('blur-protected'));
+  window.addEventListener('focus', () => document.body.classList.remove('blur-protected'));
 
-  document.addEventListener('keydown', e => {
-    if (
-      e.key === 'PrintScreen' || 
-      (e.ctrlKey && e.key === 'p') || 
-      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'S' || e.key === 'C')) ||
-      (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5'))
-    ) {
-      e.preventDefault();
-      alert('حفاظتی وجوہات کی بناء پر اسکرین شاٹ کی اجازت نہیں ہے۔');
-    }
-  });
-
-  window.addEventListener('blur', () => {
-    document.body.classList.add('blur-protected');
-  });
-
-  window.addEventListener('focus', () => {
-    document.body.classList.remove('blur-protected');
-  });
-
-  // 1. ابتدائی چیک
-  detectBlogLanguage();
-
-  // 2. اگر بلاگ میں زبان تبدیل کرنے کے لیے سوئچر پر کلک کیا جائے تو فوراً زبان اپ ڈیٹ ہوگی
-  const observer = new MutationObserver(() => {
-    detectBlogLanguage();
-  });
-
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang', 'dir', 'class'] });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
-  // 3. مسلسل چیک (ہر 1 سیکنڈ بعد تاکہ گوگل ٹرانسلیٹ کی تبدیلی فوراً مل جائے)
-  setInterval(detectBlogLanguage, 1000);
+  renderLibrary();
 </script>
 
 </body>
