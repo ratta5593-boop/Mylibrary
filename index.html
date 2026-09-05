@@ -53,7 +53,6 @@
     }
 
     .nav-btn:hover { background: #b89762; }
-    .admin-btn { background: #b89762; }
 
     /* ایڈمن فارم */
     .admin-panel {
@@ -169,12 +168,11 @@
   <div class="books-nav-bar">
     <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
     <div>
-      <button class="nav-btn admin-btn" onclick="openAdminWithPassword()">⚙ ایڈمن پینل</button>
       <button class="nav-btn" id="backToLibBtn" onclick="closeBook()" style="display: none;">← تمام کتب</button>
     </div>
   </div>
 
-  <!-- ایڈمن فارم (پاسورڈ کے بغیر ظاہر نہیں ہوگا) -->
+  <!-- ایڈمن فارم (صرف پاسورڈ لگانے پر کھلے گا) -->
   <div id="adminPanel" class="admin-panel" style="display: none;">
     <h3>کتاب اپلوڈ کریں (ایڈمن)</h3>
     
@@ -226,7 +224,7 @@
       <div class="book-controls-bar">
         <button class="nav-btn" id="prevBtn" onclick="prevPage()">← پچھلا</button>
         
-        <!-- پیج نمبر شو اور جمپ کرنے کا سسٹم -->
+        <!-- پیج نمبر شو کرنے اور پیج درج کر کے ڈائریکٹ جانے کا آپشن -->
         <div style="font-size: 14px; font-weight: bold;">
           صفحہ <input type="number" id="pageInput" class="page-input-box" min="1" onchange="jumpToPage(this.value)"> 
           / <span id="totalPages">1</span>
@@ -266,6 +264,19 @@
     } else if (pass !== null) {
       alert("غلط پاسورڈ!");
     }
+  }
+
+  // کی بورڈ شارٹ کٹ (Ctrl + Shift + A) سے ایڈمن کھولنا
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      e.preventDefault();
+      openAdminWithPassword();
+    }
+  });
+
+  // URL کے آخر میں #admin لگا کر کھولنا
+  if (window.location.hash === '#admin') {
+    openAdminWithPassword();
   }
 
   function toggleAdminPanel() {
