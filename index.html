@@ -35,6 +35,7 @@
       align-items: center;
       margin-bottom: 25px;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .nav-btn {
@@ -53,15 +54,37 @@
     }
 
     .nav-btn:hover { background: #b89762; }
+    .btn-danger { background: #a33; }
+    .btn-danger:hover { background: #700; }
+    .btn-gold { background: #b89762; }
+    .btn-gold:hover { background: #1c3829; }
 
-    /* ایڈمن فارم */
     .admin-panel {
       background: #ffffff;
       border: 1px solid #e2dad0;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 25px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-box {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 360px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
     }
 
     .form-group { margin-bottom: 15px; }
@@ -120,7 +143,6 @@
       position: relative;
     }
 
-    /* فل سکرین ریڈنگ اسٹائل */
     .secure-book-container:fullscreen {
       background: #f4f0eb;
       padding: 10px;
@@ -136,10 +158,6 @@
       max-height: 500px;
       border: 1px solid #eee;
       pointer-events: none;
-    }
-
-    .secure-book-container:fullscreen .book-page-view canvas {
-      max-height: 80vh;
     }
 
     .book-controls-bar {
@@ -165,41 +183,79 @@
 
 <div class="books-page-wrapper">
   
+  <!-- نیویگیشن بار -->
   <div class="books-nav-bar">
     <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
+    
+    <!-- ایڈمن کنٹرولز (صرف لاگ ان کے بعد نظر آئیں گے) -->
+    <div id="adminNavControls" style="display: none;">
+      <button class="nav-btn btn-gold" onclick="toggleUploadPanel()">+ کتاب اپلوڈ کریں</button>
+      <button class="nav-btn" onclick="toggleSettingsPanel()">⚙ سیٹنگز</button>
+      <button class="nav-btn btn-danger" onclick="adminLogout()">لاگ آؤٹ</button>
+    </div>
+
     <div>
       <button class="nav-btn" id="backToLibBtn" onclick="closeBook()" style="display: none;">← تمام کتب</button>
     </div>
   </div>
 
-  <!-- ایڈمن فارم (صرف پاسورڈ لگانے پر کھلے گا) -->
-  <div id="adminPanel" class="admin-panel" style="display: none;">
-    <h3>کتاب اپلوڈ کریں (ایڈمن)</h3>
-    
+  <!-- لاگ ان پاپ اپ ماڈل (#admin کھولنے پر یہ فارم آئے گا) -->
+  <div id="loginModal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:#1c3829; text-align:center;">ایڈمن لاگ ان</h3>
+      <div class="form-group">
+        <label>یوزر نیم (Username):</label>
+        <input type="text" id="loginUser" placeholder="یوزر نیم درج کریں">
+      </div>
+      <div class="form-group">
+        <label>پاسورڈ (Password):</label>
+        <input type="password" id="loginPass" placeholder="پاسورڈ درج کریں">
+      </div>
+      <div style="display:flex; justify-content:space-between; gap:10px;">
+        <button class="nav-btn" onclick="processLogin()">لاگ ان کریں</button>
+        <button class="nav-btn btn-danger" onclick="cancelLogin()">منسوخ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ایڈمن اپلوڈ فارم -->
+  <div id="uploadPanel" class="admin-panel" style="display: none;">
+    <h3>نئی کتاب اپلوڈ کریں</h3>
     <div class="form-group">
       <label>کتاب کا نام (اردو):</label>
       <input type="text" id="bookTitleUr" placeholder="مثال: تحقیقی مقالات">
     </div>
-
     <div class="form-group">
       <label>کتاب کا نام (English):</label>
       <input type="text" id="bookTitleEn" placeholder="Example: Research Papers">
     </div>
-
     <div class="form-group">
       <label>کتاب کا کور (Cover Image):</label>
       <input type="file" id="coverFileInput" accept="image/*">
       <input type="text" id="coverUrlInput" placeholder="یا امیج کا لنک (URL) درج کریں" style="margin-top: 5px;">
     </div>
-
     <div class="form-group">
       <label>کتاب کی پی ڈی ایف (PDF File):</label>
       <input type="file" id="pdfFileInput" accept="application/pdf">
       <input type="text" id="pdfUrlInput" placeholder="یا پی ڈی ایف فائل کا لنک (URL) درج کریں" style="margin-top: 5px;">
     </div>
-
     <button class="nav-btn" onclick="saveNewBook()">محفوظ کریں</button>
-    <button class="nav-btn" style="background: #a33;" onclick="toggleAdminPanel()">بند کریں</button>
+    <button class="nav-btn btn-danger" onclick="toggleUploadPanel()">بند کریں</button>
+  </div>
+
+  <!-- ایڈمن سیٹنگز فارم (یوزر نیم اور پاسورڈ تبدیل کریں) -->
+  <div id="settingsPanel" class="admin-panel" style="display: none;">
+    <h3>یوزر نیم اور پاسورڈ تبدیل کریں</h3>
+    <div class="form-group">
+      <label>نیا یوزر نیم (New Username):</label>
+      <input type="text" id="newUsername" placeholder="نیا یوزر نیم لکھیں">
+    </div>
+    <div class="form-group">
+      <label>نیا پاسورڈ (New Password):</label>
+      <input type="password" id="newPassword" placeholder="نیا پاسورڈ لکھیں">
+    </div>
+    <button class="nav-btn" onclick="updateCredentials()">سیٹنگز اپ ڈیٹ کریں</button>
+    <button class="nav-btn btn-danger" onclick="toggleSettingsPanel()">بند کریں</button>
   </div>
 
   <!-- لائبریری ویو -->
@@ -223,8 +279,7 @@
       
       <div class="book-controls-bar">
         <button class="nav-btn" id="prevBtn" onclick="prevPage()">← پچھلا</button>
-        
-        <!-- پیج نمبر شو کرنے اور پیج درج کر کے ڈائریکٹ جانے کا آپشن -->
+
         <div style="font-size: 14px; font-weight: bold;">
           صفحہ <input type="number" id="pageInput" class="page-input-box" min="1" onchange="jumpToPage(this.value)"> 
           / <span id="totalPages">1</span>
@@ -240,7 +295,12 @@
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  const ADMIN_PASSWORD = "1234"; // اپنا پاسورڈ یہاں تبدیل کریں
+  // یوزر نیم اور پاسورڈ اسٹور کرنا
+  let adminCreds = JSON.parse(localStorage.getItem('adminCredentials')) || {
+    username: "admin",
+    password: "1234"
+  };
+
   let currentLang = 'ur';
   let libraryBooks = JSON.parse(localStorage.getItem('myLibraryBooks')) || [
     {
@@ -256,32 +316,86 @@
   let currentPageIndex = 1;
   let pdfDoc = null;
 
-  // پاسورڈ سے ایڈمن پینل کھولنا
-  function openAdminWithPassword() {
-    const pass = prompt("ایڈمن پاسورڈ درج کریں:");
-    if (pass === ADMIN_PASSWORD) {
-      toggleAdminPanel();
-    } else if (pass !== null) {
-      alert("غلط پاسورڈ!");
+  // `#admin` کی موجودگی اور لاگ ان سٹیٹ چیک کرنا
+  function checkHashAndAuth() {
+    const isHashAdmin = window.location.hash === '#admin';
+    const isLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
+
+    if (isHashAdmin) {
+      if (isLoggedIn) {
+        document.getElementById('adminNavControls').style.display = 'inline-flex';
+      } else {
+        document.getElementById('loginModal').style.display = 'flex';
+      }
+    } else {
+      document.getElementById('adminNavControls').style.display = 'none';
+      document.getElementById('uploadPanel').style.display = 'none';
+      document.getElementById('settingsPanel').style.display = 'none';
+      document.getElementById('loginModal').style.display = 'none';
     }
   }
 
-  // کی بورڈ شارٹ کٹ (Ctrl + Shift + A) سے ایڈمن کھولنا
-  document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-      e.preventDefault();
-      openAdminWithPassword();
-    }
-  });
+  // URL ہیش تبدیل ہونے پر خودکار چیک کریں
+  window.addEventListener('hashchange', checkHashAndAuth);
 
-  // URL کے آخر میں #admin لگا کر کھولنا
-  if (window.location.hash === '#admin') {
-    openAdminWithPassword();
+  function processLogin() {
+    const u = document.getElementById('loginUser').value;
+    const p = document.getElementById('loginPass').value;
+
+    if (u === adminCreds.username && p === adminCreds.password) {
+      localStorage.setItem('isAdminLoggedIn', 'true');
+      alert('لاگ ان کامیاب رہا!');
+      document.getElementById('loginModal').style.display = 'none';
+      checkHashAndAuth();
+    } else {
+      alert('غلط یوزر نیم یا پاسورڈ!');
+    }
   }
 
-  function toggleAdminPanel() {
-    const panel = document.getElementById('adminPanel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  function cancelLogin() {
+    history.pushState("", document.title, window.location.pathname + window.location.search);
+    checkHashAndAuth();
+  }
+
+  function adminLogout() {
+    localStorage.removeItem('isAdminLoggedIn');
+    history.pushState("", document.title, window.location.pathname + window.location.search);
+    alert('آپ لاگ آؤٹ ہو چکے ہیں!');
+    checkHashAndAuth();
+  }
+
+  function toggleUploadPanel() {
+    const p = document.getElementById('uploadPanel');
+    document.getElementById('settingsPanel').style.display = 'none';
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleSettingsPanel() {
+    const p = document.getElementById('settingsPanel');
+    document.getElementById('uploadPanel').style.display = 'none';
+    if (p.style.display === 'none') {
+      document.getElementById('newUsername').value = adminCreds.username;
+      document.getElementById('newPassword').value = adminCreds.password;
+      p.style.display = 'block';
+    } else {
+      p.style.display = 'none';
+    }
+  }
+
+  function updateCredentials() {
+    const newU = document.getElementById('newUsername').value;
+    const newP = document.getElementById('newPassword').value;
+
+    if (!newU || !newP) {
+      alert('یوزر نیم اور پاسورڈ خالی نہیں ہو سکتے!');
+      return;
+    }
+
+    adminCreds.username = newU;
+    adminCreds.password = newP;
+    localStorage.setItem('adminCredentials', JSON.stringify(adminCreds));
+    alert('یوزر نیم اور پاسورڈ کامیابی سے تبدیل ہو گیا!');
+    toggleSettingsPanel();
   }
 
   async function saveNewBook() {
@@ -312,7 +426,7 @@
     libraryBooks.push(bookData);
     localStorage.setItem('myLibraryBooks', JSON.stringify(libraryBooks));
     alert('کتاب کامیابی سے اپلوڈ ہو گئی!');
-    toggleAdminPanel();
+    toggleUploadPanel();
     renderLibrary();
   }
 
@@ -415,7 +529,6 @@
     }
   }
 
-  // فل سکرین فنکشن
   function toggleFullScreen() {
     const container = document.getElementById('swipeArea');
     if (!document.fullscreenElement) {
@@ -431,11 +544,11 @@
     document.getElementById('backToLibBtn').style.display = 'none';
   }
 
-  // سیکیورٹی
   document.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('blur', () => document.body.classList.add('blur-protected'));
   window.addEventListener('focus', () => document.body.classList.remove('blur-protected'));
 
+  checkHashAndAuth();
   renderLibrary();
 </script>
 
