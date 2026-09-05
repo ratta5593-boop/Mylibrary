@@ -10,7 +10,6 @@
 
   <style>
     @media print { body { display: none !important; } }
-    .blur-protected { filter: blur(25px) !important; user-select: none !important; }
 
     body {
       background-color: #f4f0eb;
@@ -21,6 +20,7 @@
       text-align: right;
       color: #1c3829;
       user-select: none;
+      -webkit-user-select: none;
     }
 
     .books-page-wrapper {
@@ -174,33 +174,62 @@
       border: 1px solid #eee;
       pointer-events: none;
       transform-origin: center center;
+      transition: transform 0.1s ease-out;
     }
 
-    /* 500+ مرتبہ عطاء لائبریری کا گھنا واٹرمارک گرڈ */
-    .watermark-grid-overlay {
+    /* ریڈنگ ویو میں ہر صفحے پر ایک بار شفاف نیلا واٹرمارک */
+    .single-page-watermark {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 42px;
+      font-weight: bold;
+      color: rgba(0, 102, 204, 0.22); /* ٹرانسپیرینٹ بلیو */
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    /* سکرین شارٹ / پروٹیکشن اوورلے - بلر اور 500 بار واٹرمارک */
+    .screenshot-protection-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      z-index: 99999;
+      overflow: hidden;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .watermark-500-grid {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-around;
       align-content: space-around;
-      pointer-events: none;
-      z-index: 10;
-      overflow: hidden;
-      transform: rotate(-25deg) scale(1.3);
-      opacity: 0.28; /* شفافیت */
+      width: 140%;
+      height: 140%;
+      transform: rotate(-20deg);
     }
 
-    .watermark-item {
-      font-size: 13px;
+    .watermark-500-item {
+      font-size: 12px;
       font-weight: bold;
-      color: #0056b3; /* ٹرانسپیرینٹ بلیو */
-      margin: 12px 8px;
+      color: rgba(0, 102, 204, 0.6);
+      margin: 8px 12px;
       white-space: nowrap;
-      user-select: none;
+    }
+
+    body.blur-protected .screenshot-protection-overlay {
+      display: flex !important;
+    }
+
+    body.blur-protected .books-page-wrapper {
+      filter: blur(30px) !important;
     }
 
     .book-controls-bar {
@@ -223,6 +252,11 @@
   </style>
 </head>
 <body>
+
+<!-- سکرین شارٹ اوورلے (500 بار واٹرمارک اور بلر کے لیے) -->
+<div class="screenshot-protection-overlay" id="protectionOverlay">
+  <div class="watermark-500-grid" id="watermark500Grid"></div>
+</div>
 
 <div class="books-page-wrapper">
   
@@ -320,9 +354,8 @@
     <div class="secure-book-container" id="swipeArea">
       <div class="book-page-wrapper">
         <div class="book-page-view" id="pageViewer"></div>
-        
-        <!-- قطاروں میں 500 بار عطاء لائبریری کا واٹرمارک -->
-        <div class="watermark-grid-overlay" id="watermarkGrid"></div>
+        <!-- ہر صفحے پر ایک شفاف نیلا واٹرمارک -->
+        <div class="single-page-watermark">عطاء لائبریری</div>
       </div>
       
       <div class="book-controls-bar">
@@ -367,18 +400,18 @@
   let currentPageIndex = 1;
   let pdfDoc = null;
 
-  // 500 مرتبہ واٹرمارک تیار کرنے کا فنکشن
-  function generateWatermarkGrid() {
-    const grid = document.getElementById('watermarkGrid');
+  // 500 مرتبہ واٹرمارک جنریٹ کرنے کا فنکشن (سکرین شارٹ پروٹیکشن کے لیے)
+  function init500Watermarks() {
+    const grid = document.getElementById('watermark500Grid');
     grid.innerHTML = '';
-    const totalCount = 400; // 400-500 بار واٹرمارک کا جال
-    for (let i = 0; i < totalCount; i++) {
-      const item = document.createElement('span');
-      item.className = 'watermark-item';
-      item.innerText = 'عطاء لائبریری';
-      grid.appendChild(item);
+    for (let i = 0; i < 500; i++) {
+      const span = document.createElement('span');
+      span.className = 'watermark-500-item';
+      span.innerText = 'عطاء لائبریری';
+      grid.appendChild(span);
     }
   }
+  init500Watermarks();
 
   function checkHashAndAuth() {
     const currentHash = window.location.hash.toLowerCase();
@@ -405,7 +438,6 @@
 
   window.addEventListener('hashchange', checkHashAndAuth);
   window.addEventListener('load', checkHashAndAuth);
-  setInterval(checkHashAndAuth, 500);
 
   function processLogin() {
     const u = document.getElementById('loginUser').value;
@@ -593,8 +625,6 @@
     document.getElementById('backToLibBtn').style.display = 'inline-flex';
     document.getElementById('activeBookTitle').innerText = currentLang === 'ur' ? book.titleUr : book.titleEn;
 
-    generateWatermarkGrid(); // واٹرمارک بچھائیں
-
     let pdfData;
     if (typeof book.pdfBlob === 'string') {
       pdfData = book.pdfBlob;
@@ -666,7 +696,7 @@
     document.getElementById('backToLibBtn').style.display = 'none';
   }
 
-  // --- ٹچ سوائپ اور پنچ زوم ---
+  // --- ٹچ سوائپ (آگے/پیچھے) اور پنچ زوم (In/Out) ---
   const swipeContainer = document.getElementById('swipeArea');
   let startX = 0, startY = 0;
   let initialPinchDistance = null;
@@ -686,11 +716,11 @@
       const newDistance = getPinchDistance(e);
       const zoomFactor = newDistance / initialPinchDistance;
       
-      if (zoomFactor > 1.05 && currentScale < 2.5) {
-        currentScale += 0.05;
+      if (zoomFactor > 1.03 && currentScale < 2.5) {
+        currentScale += 0.04;
         applyZoom();
-      } else if (zoomFactor < 0.95 && currentScale > 0.8) {
-        currentScale -= 0.05;
+      } else if (zoomFactor < 0.97 && currentScale > 0.8) {
+        currentScale -= 0.04;
         applyZoom();
       }
       initialPinchDistance = newDistance;
@@ -705,11 +735,12 @@
       let diffX = startX - endX;
       let diffY = startY - endY;
 
+      // انگلی بائیں/دائیں کرنے سے صفحہ تبدیل ہونا
       if (Math.abs(diffX) > 40 && Math.abs(diffY) < 50) {
         if (diffX > 0) {
-          nextPage();
+          nextPage(); // انگلی بائیں کرنے پر اگلا صفحہ
         } else {
-          prevPage();
+          prevPage(); // انگلی دائیں کرنے پر پچھلا صفحہ
         }
       }
     }
@@ -730,9 +761,26 @@
     }
   }
 
+  // --- سکرین شارٹ / ونڈو چینج پروٹیکشن (بلر اور 500 بار واٹرمارک) ---
   document.addEventListener('contextmenu', e => e.preventDefault());
-  window.addEventListener('blur', () => document.body.classList.add('blur-protected'));
-  window.addEventListener('focus', () => document.body.classList.remove('blur-protected'));
+
+  window.addEventListener('blur', () => {
+    document.body.classList.add('blur-protected');
+  });
+
+  window.addEventListener('focus', () => {
+    document.body.classList.remove('blur-protected');
+  });
+
+  // PrintScreen بٹن دبانے پر بلر کریں
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'PrintScreen') {
+      document.body.classList.add('blur-protected');
+      setTimeout(() => {
+        document.body.classList.remove('blur-protected');
+      }, 3000);
+    }
+  });
 
   checkHashAndAuth();
 </script>
