@@ -21,6 +21,7 @@
       color: #1c3829;
       user-select: none;
       -webkit-user-select: none;
+      overflow-x: hidden;
     }
 
     .books-page-wrapper {
@@ -160,6 +161,7 @@
       justify-content: center;
     }
 
+    /* پیننگ اور زوم کے لیے کنٹینر */
     .book-page-wrapper {
       position: relative;
       display: inline-block;
@@ -168,25 +170,32 @@
       overflow: hidden;
     }
 
+    .book-page-view {
+      position: relative;
+      display: inline-block;
+      transform-origin: center center;
+      transition: transform 0.05s ease-out;
+      will-change: transform;
+    }
+
     .book-page-view canvas {
       max-width: 100%;
       height: auto;
-      max-height: 550px;
+      max-height: 600px;
       border: 1px solid #eee;
       pointer-events: none;
-      transform-origin: center center;
-      transition: transform 0.05s linear;
+      display: block;
     }
 
-    /* ریڈنگ ویو کے مرکز (Center) میں بڑا شفاف واٹرمارک */
-    .center-page-watermark {
+    /* ریڈنگ ویو میں صرف ایک بڑا اور شفاف واٹرمارک (Center) */
+    .single-center-watermark {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) rotate(-30deg);
-      font-size: 48px;
+      font-size: 52px;
       font-weight: bold;
-      color: rgba(0, 80, 180, 0.25); /* ٹرانسپیرینٹ بلیو */
+      color: rgba(0, 70, 160, 0.18); /* بالکل شفاف اور واضح */
       pointer-events: none;
       z-index: 5;
       white-space: nowrap;
@@ -358,8 +367,8 @@
     <div class="secure-book-container" id="swipeArea">
       <div class="book-page-wrapper">
         <div class="book-page-view" id="pageViewer"></div>
-        <!-- صفحے کے مرکز (Center) میں واضح واٹرمارک -->
-        <div class="center-page-watermark">عطاء لائبریری</div>
+        <!-- صرف ایک بڑا شفاف واٹرمارک (مرکز میں) -->
+        <div class="single-center-watermark">عطاء لائبریری</div>
       </div>
       
       <div class="book-controls-bar">
@@ -404,7 +413,7 @@
   let currentPageIndex = 1;
   let pdfDoc = null;
 
-  // سکرین شارٹ گارڈ کے لیے 500 مرتبہ نیلے رنگ کا واٹرمارک گرڈ
+  // سکرین شارٹ گارڈ - 500 نیلے واٹرمارک گرڈ
   function build500WatermarkGrid() {
     const grid = document.getElementById('watermark500Grid');
     grid.innerHTML = '';
@@ -621,7 +630,7 @@
   async function openBook(index) {
     currentBookIndex = index;
     currentPageIndex = 1;
-    currentScale = 1.0;
+    resetZoomAndPosition();
     const book = activeBookList[index];
 
     document.getElementById('libraryView').style.display = 'none';
@@ -658,7 +667,7 @@
 
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
     document.getElementById('pageInput').value = num;
-    applyZoom();
+    resetZoomAndPosition();
   }
 
   function jumpToPage(val) {
@@ -700,47 +709,67 @@
     document.getElementById('backToLibBtn').style.display = 'none';
   }
 
-  // --- ٹچ سوائپ اور پنچ زوم (100% سے 1000% تک) ---
+  // --- ایڈوانسڈ پنچ زوم (5000% تک) اور صفحہ ڈریگ / پیننگ (Finger Movement) ---
   const swipeContainer = document.getElementById('swipeArea');
+  const pageViewer = document.getElementById('pageViewer');
+
+  let currentScale = 1.0; // 1.0 = 100%, 50.0 = 5000%
+  let posX = 0, posY = 0;
   let startX = 0, startY = 0;
   let initialPinchDistance = null;
-  let currentScale = 1.0; // 1.0 = 100%
+  let isDragging = false;
+
+  function updateTransform() {
+    pageViewer.style.transform = `translate(${posX}px, ${posY}px) scale(${currentScale})`;
+  }
+
+  function resetZoomAndPosition() {
+    currentScale = 1.0;
+    posX = 0;
+    posY = 0;
+    updateTransform();
+  }
 
   swipeContainer.addEventListener('touchstart', function(e) {
     if (e.touches.length === 1) {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX - posX;
+      startY = e.touches[0].clientY - posY;
+      isDragging = true;
     } else if (e.touches.length === 2) {
+      isDragging = false;
       initialPinchDistance = getPinchDistance(e);
     }
   }, { passive: true });
 
   swipeContainer.addEventListener('touchmove', function(e) {
     if (e.touches.length === 2 && initialPinchDistance) {
+      // پنچ زوم فعال ہے (100% سے 5000% تک)
       const newDistance = getPinchDistance(e);
       const zoomFactor = newDistance / initialPinchDistance;
       
-      // 100% (1.0) سے 1000% (10.0) تک زوم ان اور زوم آؤٹ
-      if (zoomFactor > 1.02 && currentScale < 10.0) {
-        currentScale += 0.1;
-        applyZoom();
-      } else if (zoomFactor < 0.98 && currentScale > 1.0) {
-        currentScale -= 0.1;
-        applyZoom();
+      let targetScale = currentScale * zoomFactor;
+      if (targetScale >= 1.0 && targetScale <= 50.0) { // 50.0 = 5000%
+        currentScale = targetScale;
+        updateTransform();
       }
       initialPinchDistance = newDistance;
+    } else if (e.touches.length === 1 && isDragging) {
+      // زوم ان ہونے کے بعد صفحہ موو (Move/Pan) کریں
+      if (currentScale > 1.05) {
+        posX = e.touches[0].clientX - startX;
+        posY = e.touches[0].clientY - startY;
+        updateTransform();
+      }
     }
   }, { passive: true });
 
   swipeContainer.addEventListener('touchend', function(e) {
-    if (e.changedTouches.length === 1 && currentScale === 1.0) {
+    if (e.changedTouches.length === 1 && currentScale <= 1.05) {
+      // نارمائل ویو میں سوائپ پیج چینج
       let endX = e.changedTouches[0].clientX;
-      let endY = e.changedTouches[0].clientY;
+      let diffX = (startX + posX) - endX;
 
-      let diffX = startX - endX;
-      let diffY = startY - endY;
-
-      if (Math.abs(diffX) > 40 && Math.abs(diffY) < 50) {
+      if (Math.abs(diffX) > 50) {
         if (diffX > 0) {
           nextPage();
         } else {
@@ -748,6 +777,7 @@
         }
       }
     }
+    isDragging = false;
     initialPinchDistance = null;
   });
 
@@ -758,17 +788,9 @@
     );
   }
 
-  function applyZoom() {
-    const canvas = document.querySelector('.book-page-view canvas');
-    if (canvas) {
-      canvas.style.transform = `scale(${currentScale})`;
-    }
-  }
-
   // --- سکرین شارٹ / ونڈو فوکس پروٹیکشن (100% بلر اور 500 نیلے واٹرمارک) ---
   document.addEventListener('contextmenu', e => e.preventDefault());
 
-  // ونڈو ان ایکٹو (Blur/Focus lost) ہونے پر
   window.addEventListener('blur', () => {
     document.body.classList.add('blur-protected');
   });
@@ -777,7 +799,6 @@
     document.body.classList.remove('blur-protected');
   });
 
-  // PrintScreen یا سکرین شارٹ کی کمانڈ کی کوشش پر
   window.addEventListener('keyup', (e) => {
     if (e.key === 'PrintScreen' || e.keyCode === 44) {
       document.body.classList.add('blur-protected');
