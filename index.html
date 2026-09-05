@@ -163,9 +163,10 @@
       color: #333;
     }
 
-    /* انگلش لے آؤٹ ایڈجسٹمنٹ */
-    [dir="ltr"] {
+    /* LTR لے آؤٹ کے لیے مخصوص سیٹنگز */
+    [dir="ltr"] body {
       text-align: left;
+      font-family: Arial, sans-serif;
     }
     [dir="ltr"] .books-header-title,
     [dir="ltr"] .book-card-item,
@@ -180,7 +181,7 @@
   
   <!-- ٹاپ نیویگیشن بار (ایک ہی لائن میں) -->
   <div class="books-nav-bar">
-    <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول</a>
+    <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
     <button class="nav-btn" id="backToLibBtn" onclick="closeBook()" style="display: none;">← تمام کتب کی طرف واپس</button>
   </div>
 
@@ -192,7 +193,7 @@
     </div>
 
     <div class="books-grid-container" id="booksGrid">
-      <!-- جاوا اسکرپٹ کے ذریعے کتب کی لسٹ آئے گی -->
+      <!-- کتب کی لسٹ -->
     </div>
   </div>
 
@@ -218,7 +219,7 @@
 </div>
 
 <script>
-  let currentLang = 'ur'; // ڈیفالٹ زبان
+  let currentLang = 'ur';
 
   const translations = {
     ur: {
@@ -271,26 +272,36 @@
   let currentBookIndex = 0;
   let currentPageIndex = 0;
 
-  // بلاگ کی زبان خودکار طریقے سے پتہ لگانے والا فنکشن
+  // تمام تکنیکوں کے ذریعے بلاگ کی زبان کا پتہ لگانا
   function detectBlogLanguage() {
-    const htmlElem = document.documentElement;
-    const pageLang = (htmlElem.lang || '').toLowerCase();
-    const pageDir = (htmlElem.dir || '').toLowerCase();
+    let detectedLang = 'ur';
 
-    // اگر بلاگ میں LTR سمت یا lang="en" ہو تو انگریزی منتخب ہوگی
-    if (pageLang.startsWith('en') || pageDir === 'ltr') {
-      currentLang = 'en';
+    // 1. HTML attributes چیک کریں
+    const htmlElem = document.documentElement;
+    const langAttr = (htmlElem.getAttribute('lang') || '').toLowerCase();
+    const dirAttr = (htmlElem.getAttribute('dir') || '').toLowerCase();
+
+    // 2. Google Translate کی کوکیز یا کلاسز چیک کریں
+    const cookies = document.cookie;
+    const isGoogleEng = cookies.includes('googtrans=/ur/en') || cookies.includes('googtrans=/auto/en');
+    const bodyClass = document.body.className;
+
+    if (langAttr.startsWith('en') || dirAttr === 'ltr' || isGoogleEng || bodyClass.includes('translated-ltr')) {
+      detectedLang = 'en';
     } else {
-      currentLang = 'ur';
+      detectedLang = 'ur';
     }
 
-    applyLanguageSettings();
+    if (currentLang !== detectedLang) {
+      currentLang = detectedLang;
+      applyLanguageSettings();
+    }
   }
 
   function applyLanguageSettings() {
     const htmlTag = document.documentElement;
-    htmlTag.lang = currentLang;
-    htmlTag.dir = currentLang === 'ur' ? 'rtl' : 'ltr';
+    htmlTag.setAttribute('lang', currentLang);
+    htmlTag.setAttribute('dir', currentLang === 'ur' ? 'rtl' : 'ltr');
 
     const t = translations[currentLang];
     document.getElementById('docTitle').innerText = t.docTitle;
@@ -308,7 +319,7 @@
     }
   }
 
-  // لائبریری ڈسپلے کرنا
+  // لائبریری رینڈر کرنا
   function renderLibrary() {
     const grid = document.getElementById('booksGrid');
     grid.innerHTML = '';
@@ -376,7 +387,7 @@
     }
   }
 
-  // --- ٹچ اور انگلی سے سوائپ (Swipe Support) ---
+  // --- ٹچ اور انگلی سے سوائپ (Touch Swipe) ---
   const swipeContainer = document.getElementById('swipeArea');
   let startX = 0;
   let endX = 0;
@@ -401,7 +412,7 @@
     }
   }
 
-  // --- اسکرین شاٹ اور پرنٹ پروٹیکشن سیکیورٹی ---
+  // --- اسکرین شاٹ پروٹیکشن ---
   document.addEventListener('contextmenu', e => e.preventDefault());
 
   document.addEventListener('keydown', e => {
@@ -424,8 +435,19 @@
     document.body.classList.remove('blur-protected');
   });
 
-  // جیسے ہی بلاگ لوڈ ہوگا، خود بخود زبان کو چیک کر لیا جائے گا
+  // 1. ابتدائی چیک
   detectBlogLanguage();
+
+  // 2. اگر بلاگ میں زبان تبدیل کرنے کے لیے سوئچر پر کلک کیا جائے تو فوراً زبان اپ ڈیٹ ہوگی
+  const observer = new MutationObserver(() => {
+    detectBlogLanguage();
+  });
+
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang', 'dir', 'class'] });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // 3. مسلسل چیک (ہر 1 سیکنڈ بعد تاکہ گوگل ٹرانسلیٹ کی تبدیلی فوراً مل جائے)
+  setInterval(detectBlogLanguage, 1000);
 </script>
 
 </body>
