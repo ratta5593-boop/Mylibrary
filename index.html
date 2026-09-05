@@ -119,11 +119,12 @@
       border-radius: 12px;
       padding: 16px;
       text-align: center;
-      cursor: pointer;
       box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+      position: relative;
     }
 
     .book-card-item:hover { border-color: #b89762; }
+    .book-cover-box { cursor: pointer; }
     .book-cover-box img {
       width: 100%;
       height: 280px;
@@ -131,6 +132,12 @@
       border-radius: 6px;
       margin-bottom: 12px;
       pointer-events: none;
+    }
+
+    .delete-btn {
+      margin-top: 10px;
+      width: 100%;
+      justify-content: center;
     }
 
     .secure-book-container {
@@ -187,7 +194,7 @@
   <div class="books-nav-bar">
     <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
     
-    <!-- ایڈمن کنٹرولز (صرف #admin اور لاگ ان کے بعد نظر آئیں گے) -->
+    <!-- ایڈمن کنٹرولز -->
     <div id="adminNavControls" style="display: none;">
       <button class="nav-btn btn-gold" onclick="toggleUploadPanel()">+ کتاب اپلوڈ کریں</button>
       <button class="nav-btn" onclick="toggleSettingsPanel()">⚙ سیٹنگز</button>
@@ -199,7 +206,7 @@
     </div>
   </div>
 
-  <!-- لاگ ان پاپ اپ ماڈل (#admin ڈالنے پر یہ کھلے گا) -->
+  <!-- لاگ ان پاپ اپ ماڈل -->
   <div id="loginModal" class="modal-overlay" style="display: none;">
     <div class="modal-box">
       <h3 style="margin-top:0; color:#1c3829; text-align:center;">ایڈمن لاگ ان</h3>
@@ -239,11 +246,11 @@
       <input type="file" id="pdfFileInput" accept="application/pdf">
       <input type="text" id="pdfUrlInput" placeholder="یا پی ڈی ایف فائل کا لنک (URL) درج کریں" style="margin-top: 5px;">
     </div>
-    <button class="nav-btn" onclick="saveNewBook()">محفوظ کریں</button>
+    <button class="nav-btn" id="saveBookBtn" onclick="saveNewBook()">محفوظ کریں</button>
     <button class="nav-btn btn-danger" onclick="toggleUploadPanel()">بند کریں</button>
   </div>
 
-  <!-- ایڈمن سیٹنگز فارم (یوزر نیم اور پاسورڈ تبدیل کریں) -->
+  <!-- ایڈمن سیٹنگز فارم -->
   <div id="settingsPanel" class="admin-panel" style="display: none;">
     <h3>یوزر نیم اور پاسورڈ تبدیل کریں</h3>
     <div class="form-group">
@@ -295,28 +302,31 @@
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  // یوزر نیم اور پاسورڈ اسٹور کرنا
+  // IndexedDB سیکنڈوں میں فائل اپلوڈنگ کے لیے
+  let db;
+  const request = indexedDB.open("LibraryDB", 1);
+  request.onupgradeneeded = function(e) {
+    db = e.target.result;
+    if (!db.objectStoreNames.contains("books")) {
+      db.createObjectStore("books", { keyPath: "id", autoIncrement: true });
+    }
+  };
+  request.onsuccess = function(e) {
+    db = e.target.result;
+    renderLibrary();
+  };
+
   let adminCreds = JSON.parse(localStorage.getItem('adminCredentials')) || {
     username: "admin",
     password: "1234"
   };
 
   let currentLang = 'ur';
-  let libraryBooks = JSON.parse(localStorage.getItem('myLibraryBooks')) || [
-    {
-      titleUr: "تحقیقی مقالات",
-      titleEn: "Research Papers",
-      cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
-      type: "images",
-      pages: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"]
-    }
-  ];
-
+  let activeBookList = [];
   let currentBookIndex = 0;
   let currentPageIndex = 1;
   let pdfDoc = null;
 
-  // `#admin` کی موجودگی پر مکمل انحصار
   function checkHashAndAuth() {
     const isHashAdmin = window.location.hash === '#admin';
     const isLoggedInSession = sessionStorage.getItem('isAdminLoggedIn') === 'true';
@@ -330,16 +340,15 @@
         document.getElementById('loginModal').style.display = 'flex';
       }
     } else {
-      // جیسے ہی #admin ریمو ہوگا، فوراً لاگ آؤٹ اور تمام پینلز بند کر دے گا
       sessionStorage.removeItem('isAdminLoggedIn');
       document.getElementById('adminNavControls').style.display = 'none';
       document.getElementById('uploadPanel').style.display = 'none';
       document.getElementById('settingsPanel').style.display = 'none';
       document.getElementById('loginModal').style.display = 'none';
     }
+    renderLibrary();
   }
 
-  // URL ہیش تبدیل ہونے کو لمحہ بہ لمحہ چیک کرنا
   window.addEventListener('hashchange', checkHashAndAuth);
 
   function processLogin() {
@@ -356,14 +365,12 @@
   }
 
   function cancelLogin() {
-    // #admin کو ہٹا دے گا جس سے لاگ آؤٹ ہو جائے گا
     history.pushState("", document.title, window.location.pathname + window.location.search);
     checkHashAndAuth();
   }
 
   function adminLogout() {
     sessionStorage.removeItem('isAdminLoggedIn');
-    // #admin کو URL سے ریمو کر دے گا
     history.pushState("", document.title, window.location.pathname + window.location.search);
     alert('آپ لاگ آؤٹ ہو چکے ہیں!');
     checkHashAndAuth();
@@ -403,6 +410,7 @@
     toggleSettingsPanel();
   }
 
+  // سپر فاسٹ سیونگ (ArrayBuffer کے ساتھ)
   async function saveNewBook() {
     const titleUr = document.getElementById('bookTitleUr').value;
     const titleEn = document.getElementById('bookTitleEn').value;
@@ -413,26 +421,41 @@
 
     if (!titleUr) { alert('کتاب کا نام لکھنا ضروری ہے'); return; }
 
+    const saveBtn = document.getElementById('saveBookBtn');
+    saveBtn.innerText = 'محفوظ ہو رہا ہے...';
+    saveBtn.disabled = true;
+
     let finalCover = coverUrl;
     if (coverFile) finalCover = await readFileAsDataURL(coverFile);
+
+    let pdfData = null;
+    if (pdfFile) pdfData = await readFileAsArrayBuffer(pdfFile);
+    else if (pdfUrl) pdfData = pdfUrl;
+    else { 
+      alert('پی ڈی ایف فائل یا لنک شامل کریں');
+      saveBtn.innerText = 'محفوظ کریں';
+      saveBtn.disabled = false;
+      return; 
+    }
 
     let bookData = {
       titleUr: titleUr,
       titleEn: titleEn || titleUr,
       cover: finalCover || 'https://via.placeholder.com/300x400?text=No+Cover',
-      type: 'pdf',
-      pdfData: null
+      pdfData: pdfData
     };
 
-    if (pdfFile) bookData.pdfData = await readFileAsDataURL(pdfFile);
-    else if (pdfUrl) bookData.pdfData = pdfUrl;
-    else { alert('پی ڈی ایف فائل یا لنک شامل کریں'); return; }
+    const transaction = db.transaction(["books"], "readwrite");
+    const store = transaction.objectStore("books");
+    store.add(bookData);
 
-    libraryBooks.push(bookData);
-    localStorage.setItem('myLibraryBooks', JSON.stringify(libraryBooks));
-    alert('کتاب کامیابی سے اپلوڈ ہو گئی!');
-    toggleUploadPanel();
-    renderLibrary();
+    transaction.oncomplete = function() {
+      alert('کتاب سیکنڈوں میں کامیابی سے اپلوڈ ہو گئی!');
+      saveBtn.innerText = 'محفوظ کریں';
+      saveBtn.disabled = false;
+      toggleUploadPanel();
+      renderLibrary();
+    };
   }
 
   function readFileAsDataURL(file) {
@@ -444,42 +467,75 @@
     });
   }
 
+  function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   function renderLibrary() {
+    if (!db) return;
     const grid = document.getElementById('booksGrid');
     grid.innerHTML = '';
-    
-    libraryBooks.forEach((book, index) => {
-      const card = document.createElement('div');
-      card.className = 'book-card-item';
-      card.onclick = () => openBook(index);
-      card.innerHTML = `
-        <div class="book-cover-box"><img src="${book.cover}" alt="Book Cover"></div>
-        <h3>${currentLang === 'ur' ? book.titleUr : book.titleEn}</h3>
-      `;
-      grid.appendChild(card);
-    });
+
+    const transaction = db.transaction(["books"], "readonly");
+    const store = transaction.objectStore("books");
+    const getAll = store.getAll();
+
+    getAll.onsuccess = function() {
+      activeBookList = getAll.result;
+      const isAdminLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+
+      activeBookList.forEach((book, index) => {
+        const card = document.createElement('div');
+        card.className = 'book-card-item';
+        
+        let deleteBtnHTML = '';
+        if (isAdminLoggedIn && window.location.hash === '#admin') {
+          deleteBtnHTML = `<button class="nav-btn btn-danger delete-btn" onclick="deleteBook(${book.id})">🗑 ڈیلیٹ کریں</button>`;
+        }
+
+        card.innerHTML = `
+          <div class="book-cover-box" onclick="openBook(${index})">
+            <img src="${book.cover}" alt="Book Cover">
+            <h3>${currentLang === 'ur' ? book.titleUr : book.titleEn}</h3>
+          </div>
+          ${deleteBtnHTML}
+        `;
+        grid.appendChild(card);
+      });
+    };
+  }
+
+  function deleteBook(id) {
+    if (confirm("کیا آپ واقعی اس کتاب کو ڈیلیٹ کرنا چاہتے ہیں؟")) {
+      const transaction = db.transaction(["books"], "readwrite");
+      const store = transaction.objectStore("books");
+      store.delete(id);
+      transaction.oncomplete = function() {
+        alert("کتاب کامیابی سے ڈیلیٹ کر دی گئی!");
+        renderLibrary();
+      };
+    }
   }
 
   async function openBook(index) {
     currentBookIndex = index;
     currentPageIndex = 1;
-    const book = libraryBooks[index];
+    const book = activeBookList[index];
 
     document.getElementById('libraryView').style.display = 'none';
     document.getElementById('readerView').style.display = 'block';
     document.getElementById('backToLibBtn').style.display = 'inline-flex';
     document.getElementById('activeBookTitle').innerText = currentLang === 'ur' ? book.titleUr : book.titleEn;
 
-    if (book.type === 'pdf' || book.pdfData) {
-      const loadingTask = pdfjsLib.getDocument(book.pdfData);
-      pdfDoc = await loadingTask.promise;
-      document.getElementById('totalPages').innerText = pdfDoc.numPages;
-      renderPdfPage(currentPageIndex);
-    } else {
-      pdfDoc = null;
-      document.getElementById('totalPages').innerText = book.pages.length;
-      renderImagePage();
-    }
+    const loadingTask = pdfjsLib.getDocument({ data: book.pdfData });
+    pdfDoc = await loadingTask.promise;
+    document.getElementById('totalPages').innerText = pdfDoc.numPages;
+    renderPdfPage(currentPageIndex);
   }
 
   async function renderPdfPage(num) {
@@ -499,38 +555,27 @@
     document.getElementById('pageInput').value = num;
   }
 
-  function renderImagePage() {
-    const book = libraryBooks[currentBookIndex];
-    const viewer = document.getElementById('pageViewer');
-    viewer.innerHTML = `<img src="${book.pages[currentPageIndex - 1]}" alt="Page">`;
-    document.getElementById('pageInput').value = currentPageIndex;
-  }
-
   function jumpToPage(val) {
     let pageNum = parseInt(val);
-    let max = pdfDoc ? pdfDoc.numPages : libraryBooks[currentBookIndex].pages.length;
+    let max = pdfDoc ? pdfDoc.numPages : 1;
     
     if (pageNum >= 1 && pageNum <= max) {
       currentPageIndex = pageNum;
-      if (pdfDoc) renderPdfPage(currentPageIndex);
-      else renderImagePage();
+      renderPdfPage(currentPageIndex);
     }
   }
 
   function nextPage() {
-    let max = pdfDoc ? pdfDoc.numPages : libraryBooks[currentBookIndex].pages.length;
-    if (currentPageIndex < max) {
+    if (currentPageIndex < pdfDoc.numPages) {
       currentPageIndex++;
-      if (pdfDoc) renderPdfPage(currentPageIndex);
-      else renderImagePage();
+      renderPdfPage(currentPageIndex);
     }
   }
 
   function prevPage() {
     if (currentPageIndex > 1) {
       currentPageIndex--;
-      if (pdfDoc) renderPdfPage(currentPageIndex);
-      else renderImagePage();
+      renderPdfPage(currentPageIndex);
     }
   }
 
@@ -554,7 +599,6 @@
   window.addEventListener('focus', () => document.body.classList.remove('blur-protected'));
 
   checkHashAndAuth();
-  renderLibrary();
 </script>
 
 </body>
