@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ur" dir="rtl" id="htmlTag">
 <head> 
-  <!-- جب دوبارہ کوئی نیا چینج کریں تو v=1 کو v=2 کر دیں -->
    <link rel="stylesheet" href="style.css?v=0.1">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -9,6 +8,10 @@
 
   <!-- PDF.js لائبریری -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <!-- Firebase Database SDK (Realtime Database Integration) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
     @media print { body { display: none !important; } }
@@ -163,7 +166,6 @@
       justify-content: center;
     }
 
-    /* پیننگ اور زوم کے لیے کنٹینر */
     .book-page-wrapper {
       position: relative;
       display: inline-block;
@@ -189,7 +191,6 @@
       display: block;
     }
 
-    /* ریڈنگ ویو میں صرف ایک بڑا اور شفاف واٹرمارک (Center) */
     .single-center-watermark {
       position: absolute;
       top: 50%;
@@ -197,7 +198,7 @@
       transform: translate(-50%, -50%) rotate(-30deg);
       font-size: 52px;
       font-weight: bold;
-      color: rgba(0, 70, 160, 0.18); /* بالکل شفاف اور واضح */
+      color: rgba(0, 70, 160, 0.18);
       pointer-events: none;
       z-index: 5;
       white-space: nowrap;
@@ -206,7 +207,6 @@
       text-align: center;
     }
 
-    /* سکرین شارٹ / بلر گارڈ اوورلے (500 بار واٹرمارک) */
     .screenshot-protection-overlay {
       display: none;
       position: fixed;
@@ -238,7 +238,6 @@
       white-space: nowrap;
     }
 
-    /* 100% بلر حالت */
     body.blur-protected .screenshot-protection-overlay {
       display: flex !important;
     }
@@ -268,18 +267,15 @@
 </head>
 <body>
 
-<!-- سکرین شارٹ گارڈ - 500 مرتبہ نیلے واٹرمارک کی سکرین -->
 <div class="screenshot-protection-overlay" id="protectionOverlay">
   <div class="watermark-500-grid" id="watermark500Grid"></div>
 </div>
 
 <div class="books-page-wrapper">
   
-  <!-- نیویگیشن بار -->
   <div class="books-nav-bar">
     <a href="https://attaurrehman-atta.blogspot.com/p/home.html" class="nav-btn" id="homeBtn">صفحہ اول (Home)</a>
     
-    <!-- ایڈمن کنٹرولز -->
     <div id="adminNavControls" style="display: none;">
       <button class="nav-btn btn-gold" onclick="toggleUploadPanel()">+ کتاب اپلوڈ کریں</button>
       <button class="nav-btn" onclick="toggleSettingsPanel()">⚙ سیٹنگز</button>
@@ -291,7 +287,6 @@
     </div>
   </div>
 
-  <!-- لاگ ان پاپ اپ ماڈل -->
   <div id="loginModal" class="modal-overlay" style="display: none;">
     <div class="modal-box">
       <h3 style="margin-top:0; color:#1c3829; text-align:center;">ایڈمن لاگ ان</h3>
@@ -310,7 +305,6 @@
     </div>
   </div>
 
-  <!-- ایڈمن اپلوڈ فارم -->
   <div id="uploadPanel" class="admin-panel" style="display: none;">
     <h3>نئی کتاب اپلوڈ کریں</h3>
     <div class="form-group">
@@ -322,20 +316,17 @@
       <input type="text" id="bookTitleEn" placeholder="Example: Research Papers">
     </div>
     <div class="form-group">
-      <label>کتاب کا کور (Cover Image):</label>
-      <input type="file" id="coverFileInput" accept="image/*">
-      <input type="text" id="coverUrlInput" placeholder="یا امیج کا لنک (URL) درج کریں" style="margin-top: 5px;">
+      <label>کتاب کے کور کی تصویر کا لنک (Cover Image URL):</label>
+      <input type="text" id="coverUrlInput" placeholder="https://example.com/cover.jpg">
     </div>
     <div class="form-group">
-      <label>کتاب کی پی ڈی ایف (PDF File):</label>
-      <input type="file" id="pdfFileInput" accept="application/pdf">
-      <input type="text" id="pdfUrlInput" placeholder="یا پی ڈی ایف فائل کا لنک (URL) درج کریں" style="margin-top: 5px;">
+      <label>کتاب کی پی ڈی ایف فائل کا لنک (PDF File URL):</label>
+      <input type="text" id="pdfUrlInput" placeholder="https://example.com/book.pdf">
     </div>
     <button class="nav-btn" id="saveBookBtn" onclick="saveNewBookFast()">محفوظ کریں</button>
     <button class="nav-btn btn-danger" onclick="toggleUploadPanel()">بند کریں</button>
   </div>
 
-  <!-- ایڈمن سیٹنگز فارم -->
   <div id="settingsPanel" class="admin-panel" style="display: none;">
     <h3>یوزر نیم اور پاسورڈ تبدیل کریں</h3>
     <div class="form-group">
@@ -350,7 +341,6 @@
     <button class="nav-btn btn-danger" onclick="toggleSettingsPanel()">بند کریں</button>
   </div>
 
-  <!-- لائبریری ویو -->
   <div id="libraryView">
     <div class="books-header-title">
       <h1 id="libTitle">آن لائن کتب خانہ</h1>
@@ -359,7 +349,6 @@
     <div class="books-grid-container" id="booksGrid"></div>
   </div>
 
-  <!-- بک ریڈر -->
   <div id="readerView" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 id="activeBookTitle" style="font-size: 20px; color: #1c3829; margin: 0;">کتاب کا نام</h2>
@@ -369,7 +358,6 @@
     <div class="secure-book-container" id="swipeArea">
       <div class="book-page-wrapper">
         <div class="book-page-view" id="pageViewer"></div>
-        <!-- صرف ایک بڑا شفاف واٹرمارک (مرکز میں) -->
         <div class="single-center-watermark">عطاء لائبریری</div>
       </div>
       
@@ -391,18 +379,12 @@
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  let db;
-  const request = indexedDB.open("FastLibraryDB", 2);
-  request.onupgradeneeded = function(e) {
-    db = e.target.result;
-    if (!db.objectStoreNames.contains("books")) {
-      db.createObjectStore("books", { keyPath: "id", autoIncrement: true });
-    }
+  // --- آن لائن ریئل ٹائم ڈیٹا بیس کنفیگریشن ---
+  const firebaseConfig = {
+    databaseURL: "https://mylibrary-books-default-rtdb.firebaseio.com"
   };
-  request.onsuccess = function(e) {
-    db = e.target.result;
-    renderLibrary();
-  };
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
 
   let adminCreds = JSON.parse(localStorage.getItem('adminCredentials')) || {
     username: "admin",
@@ -415,7 +397,6 @@
   let currentPageIndex = 1;
   let pdfDoc = null;
 
-  // سکرین شارٹ گارڈ - 500 نیلے واٹرمارک گرڈ
   function build500WatermarkGrid() {
     const grid = document.getElementById('watermark500Grid');
     grid.innerHTML = '';
@@ -448,7 +429,6 @@
       document.getElementById('settingsPanel').style.display = 'none';
       document.getElementById('loginModal').style.display = 'none';
     }
-    renderLibrary();
   }
 
   window.addEventListener('hashchange', checkHashAndAuth);
@@ -462,6 +442,7 @@
       sessionStorage.setItem('isAdminLoggedIn', 'true');
       alert('لاگ ان کامیاب رہا!');
       checkHashAndAuth();
+      renderLibrary();
     } else {
       alert('غلط یوزر نیم یا پاسورڈ!');
     }
@@ -477,6 +458,7 @@
     window.location.hash = '';
     alert('آپ لاگ آؤٹ ہو چکے ہیں!');
     checkHashAndAuth();
+    renderLibrary();
   }
 
   function toggleUploadPanel() {
@@ -513,119 +495,88 @@
     toggleSettingsPanel();
   }
 
-  async function saveNewBookFast() {
-    const titleUr = document.getElementById('bookTitleUr').value;
-    const titleEn = document.getElementById('bookTitleEn').value;
-    const coverFile = document.getElementById('coverFileInput').files[0];
-    const coverUrl = document.getElementById('coverUrlInput').value;
-    const pdfFile = document.getElementById('pdfFileInput').files[0];
-    const pdfUrl = document.getElementById('pdfUrlInput').value;
+  function saveNewBookFast() {
+    const titleUr = document.getElementById('bookTitleUr').value.trim();
+    const titleEn = document.getElementById('bookTitleEn').value.trim();
+    const coverUrl = document.getElementById('coverUrlInput').value.trim();
+    const pdfUrl = document.getElementById('pdfUrlInput').value.trim();
 
     if (!titleUr) { alert('کتاب کا نام لکھنا ضروری ہے'); return; }
+    if (!pdfUrl) { alert('پی ڈی ایف فائل کا لنک (URL) فراہم کریں'); return; }
 
     const saveBtn = document.getElementById('saveBookBtn');
     saveBtn.innerText = 'محفوظ ہو رہا ہے...';
     saveBtn.disabled = true;
 
-    let finalCover = coverUrl;
-    if (coverFile) {
-      finalCover = await readFileAsDataURL(coverFile);
-    }
-
-    let pdfBlob = null;
-    if (pdfFile) {
-      pdfBlob = pdfFile;
-    } else if (pdfUrl) {
-      pdfBlob = pdfUrl;
-    } else { 
-      alert('پی ڈی ایف فائل یا لنک شامل کریں');
-      saveBtn.innerText = 'محفوظ کریں';
-      saveBtn.disabled = false;
-      return; 
-    }
-
-    let bookData = {
+    const newBookRef = database.ref('books').push();
+    newBookRef.set({
       titleUr: titleUr,
       titleEn: titleEn || titleUr,
-      cover: finalCover || 'https://via.placeholder.com/300x400?text=No+Cover',
-      pdfBlob: pdfBlob
-    };
-
-    const transaction = db.transaction(["books"], "readwrite");
-    const store = transaction.objectStore("books");
-    store.add(bookData);
-
-    transaction.oncomplete = function() {
-      alert('کتاب کامیابی سے اپلوڈ ہو گئی!');
+      cover: coverUrl || 'https://via.placeholder.com/300x400?text=No+Cover',
+      pdfUrl: pdfUrl
+    }).then(() => {
+      alert('کتاب تمام ڈیوائسز کے لیے کامیابی سے اپلوڈ ہو گئی!');
       saveBtn.innerText = 'محفوظ کریں';
       saveBtn.disabled = false;
       document.getElementById('bookTitleUr').value = '';
       document.getElementById('bookTitleEn').value = '';
-      document.getElementById('pdfFileInput').value = '';
-      document.getElementById('coverFileInput').value = '';
+      document.getElementById('pdfUrlInput').value = '';
+      document.getElementById('coverUrlInput').value = '';
       toggleUploadPanel();
-      renderLibrary();
-    };
-  }
-
-  function readFileAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+    }).catch((err) => {
+      alert('ایرر: ' + err.message);
+      saveBtn.innerText = 'محفوظ کریں';
+      saveBtn.disabled = false;
     });
   }
 
+  // آن لائن ڈیٹا بیس سے کتابیں لوڈ اور ریئل ٹائم سنگکرونائز کرنا
   function renderLibrary() {
-    if (!db) return;
-    const grid = document.getElementById('booksGrid');
-    grid.innerHTML = '';
+    database.ref('books').on('value', (snapshot) => {
+      const grid = document.getElementById('booksGrid');
+      grid.innerHTML = '';
+      activeBookList = [];
 
-    const transaction = db.transaction(["books"], "readonly");
-    const store = transaction.objectStore("books");
-    const getAll = store.getAll();
-
-    getAll.onsuccess = function() {
-      activeBookList = getAll.result;
-      const isAdminLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
-      const isHashAdmin = window.location.hash.toLowerCase() === '#admin';
-
-      if(activeBookList.length === 0) {
+      const data = snapshot.val();
+      if (!data) {
         grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">کوئی کتاب موجود نہیں ہے۔</p>`;
         return;
       }
 
-      activeBookList.forEach((book, index) => {
+      const isAdminLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+      const isHashAdmin = window.location.hash.toLowerCase() === '#admin';
+
+      Object.keys(data).forEach((key) => {
+        const book = data[key];
+        book.dbKey = key;
+        activeBookList.push(book);
+        const index = activeBookList.length - 1;
+
         const card = document.createElement('div');
         card.className = 'book-card-item';
         
         let deleteBtnHTML = '';
         if (isAdminLoggedIn && isHashAdmin) {
-          deleteBtnHTML = `<button class="nav-btn btn-danger delete-btn" onclick="deleteBook(${book.id})">🗑 ڈیلیٹ کریں</button>`;
+          deleteBtnHTML = `<button class="nav-btn btn-danger delete-btn" onclick="deleteBook('${key}')">🗑 ڈیلیٹ کریں</button>`;
         }
 
         card.innerHTML = `
           <div class="book-cover-box" onclick="openBook(${index})">
-            <img src="${book.cover}" alt="Book Cover">
+            <img src="${book.cover}" alt="Book Cover" onerror="this.src='https://via.placeholder.com/300x400?text=No+Cover'">
             <h3>${currentLang === 'ur' ? book.titleUr : book.titleEn}</h3>
           </div>
           ${deleteBtnHTML}
         `;
         grid.appendChild(card);
       });
-    };
+    });
   }
 
-  function deleteBook(id) {
-    if (confirm("کیا آپ واقعی اس کتاب کو ڈیلیٹ کرنا چاہتے ہیں؟")) {
-      const transaction = db.transaction(["books"], "readwrite");
-      const store = transaction.objectStore("books");
-      store.delete(id);
-      transaction.oncomplete = function() {
+  function deleteBook(key) {
+    if (confirm("کیا آپ واقعی اس کتاب کو تمام موبائلز سے ڈیلیٹ کرنا چاہتے ہیں؟")) {
+      database.ref('books/' + key).remove().then(() => {
         alert("کتاب کامیابی سے ڈیلیٹ کر دی گئی!");
-        renderLibrary();
-      };
+      });
     }
   }
 
@@ -640,18 +591,14 @@
     document.getElementById('backToLibBtn').style.display = 'inline-flex';
     document.getElementById('activeBookTitle').innerText = currentLang === 'ur' ? book.titleUr : book.titleEn;
 
-    let pdfData;
-    if (typeof book.pdfBlob === 'string') {
-      pdfData = book.pdfBlob;
-    } else {
-      const arrayBuffer = await book.pdfBlob.arrayBuffer();
-      pdfData = new Uint8Array(arrayBuffer);
+    try {
+      const loadingTask = pdfjsLib.getDocument(book.pdfUrl);
+      pdfDoc = await loadingTask.promise;
+      document.getElementById('totalPages').innerText = pdfDoc.numPages;
+      renderPdfPage(currentPageIndex);
+    } catch (error) {
+      alert("پی ڈی ایف فائل لوڈ کرنے میں مسئلہ پیش آ رہا ہے: " + error.message);
     }
-
-    const loadingTask = pdfjsLib.getDocument({ data: pdfData });
-    pdfDoc = await loadingTask.promise;
-    document.getElementById('totalPages').innerText = pdfDoc.numPages;
-    renderPdfPage(currentPageIndex);
   }
 
   async function renderPdfPage(num) {
@@ -711,11 +658,10 @@
     document.getElementById('backToLibBtn').style.display = 'none';
   }
 
-  // --- ایڈوانسڈ پنچ زوم (5000% تک) اور صفحہ ڈریگ / پیننگ (Finger Movement) ---
   const swipeContainer = document.getElementById('swipeArea');
   const pageViewer = document.getElementById('pageViewer');
 
-  let currentScale = 1.0; // 1.0 = 100%, 50.0 = 5000%
+  let currentScale = 1.0;
   let posX = 0, posY = 0;
   let startX = 0, startY = 0;
   let initialPinchDistance = null;
@@ -745,18 +691,16 @@
 
   swipeContainer.addEventListener('touchmove', function(e) {
     if (e.touches.length === 2 && initialPinchDistance) {
-      // پنچ زوم فعال ہے (100% سے 5000% تک)
       const newDistance = getPinchDistance(e);
       const zoomFactor = newDistance / initialPinchDistance;
       
       let targetScale = currentScale * zoomFactor;
-      if (targetScale >= 1.0 && targetScale <= 50.0) { // 50.0 = 5000%
+      if (targetScale >= 1.0 && targetScale <= 50.0) {
         currentScale = targetScale;
         updateTransform();
       }
       initialPinchDistance = newDistance;
     } else if (e.touches.length === 1 && isDragging) {
-      // زوم ان ہونے کے بعد صفحہ موو (Move/Pan) کریں
       if (currentScale > 1.05) {
         posX = e.touches[0].clientX - startX;
         posY = e.touches[0].clientY - startY;
@@ -767,7 +711,6 @@
 
   swipeContainer.addEventListener('touchend', function(e) {
     if (e.changedTouches.length === 1 && currentScale <= 1.05) {
-      // نارمائل ویو میں سوائپ پیج چینج
       let endX = e.changedTouches[0].clientX;
       let diffX = (startX + posX) - endX;
 
@@ -790,7 +733,6 @@
     );
   }
 
-  // --- سکرین شارٹ / ونڈو فوکس پروٹیکشن (100% بلر اور 500 نیلے واٹرمارک) ---
   document.addEventListener('contextmenu', e => e.preventDefault());
 
   window.addEventListener('blur', () => {
@@ -810,7 +752,7 @@
     }
   });
 
-  checkHashAndAuth();
+  renderLibrary();
 </script>
 
 </body>
